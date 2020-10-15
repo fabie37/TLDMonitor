@@ -17,6 +17,10 @@ typedef struct tldnode {
     int count;
 } TLDNode;
 
+typedef struct tlditerator {
+    struct stack *history;
+} TLDIterator;
+
 typedef struct stack {
     struct node *header;
 } Stack;
@@ -38,7 +42,7 @@ Stack *stack_create();
 void stack_destory(Stack *stack);
 TLDNode *stack_top(Stack *stack);
 int stack_push(Stack *stack, TLDNode *tldnode);
-void stack_pop(Stack *stack);
+TLDNode *stack_pop(Stack *stack);
 Node *node_create(TLDNode *tldnode);
 void node_destory(Node *node);
 
@@ -65,9 +69,6 @@ TLDList *tldlist_create(Date *begin, Date *end) {
 }
 
 void tldlist_destroy(TLDList *tld) {
-
-    // Make sure no null values entered
-    if (tld == NULL) { return; }
 
     // Free all dates from list
     date_destroy(tld->begin);
@@ -161,6 +162,68 @@ int tldlist_add_recurrsive(TLDNode *node, char *hostname) {
     }
 }
 
+TLDIterator *tldlist_iter_create(TLDList *tld) {
+    
+    // Assign space for new iterator and it's members in the heap
+    TLDIterator *iter = (TLDIterator *) malloc(sizeof(TLDIterator));
+    Stack *history = stack_create();
+
+    // If malloc fails then return null
+    if (iter == NULL || history == NULL) { return NULL; }
+
+    // Assign the root of the tree to first in history list
+    stack_push(history, tld->root);
+
+    // Assign members to iterator
+    iter->history = history;
+    return iter;
+}
+
+TLDNode *tldlist_iter_next(TLDIterator *iter) {
+
+    // Iterate in depth-search fashion and in order.
+
+    // So let's take it step at a time
+    // So the next node will be at the top of the history as the root is already there.
+    Stack *history = iter->history;
+    TLDNode *current_node = stack_top(history);
+
+    // Base case: If no more items return null
+    if (current_node == NULL) {
+        return current_node;
+    }
+    // First Case:If current node has a left child, continue down the tree
+    else if (current_node->left != NULL) {
+        stack_push(history, current_node->left);
+    } 
+    // Second Case: If current node doesn't have a left child but has a right child
+    else if (current_node->left == NULL && current_node->right != NULL) {
+        stack_push(history, current_node->right);
+    }
+    // Third Case: If current node has no children, start to peel back history
+    else if (current_node->left == NULL && current_node->right == NULL) {
+        TLDNode *prev_node = stack_pop(history);
+        while (stack_top(history) != NULL && (stack_top(history)->right == prev_node || stack_top(history)->right == NULL)) {
+            prev_node = stack_pop(history);
+        }
+        if (stack_top(history) == NULL) {
+            return current_node;
+        }
+        else if (stack_top(history)->right != NULL) {
+            stack_push(history, stack_top(history)->right);
+        }
+    } 
+
+    return current_node;
+}
+
+void tldlist_iter_destroy(TLDIterator *iter) {
+
+    // Make sure to remove iterator and it's dynamically allocated members off of the heap
+    stack_destory(iter->history);
+    free(iter);
+}
+
 long tldlist_count(TLDList *tld) {
     // Ensure passed tld is not null before turning a the number of sucessful additions
     return (tld == NULL) ? 0 : tld->additions;
@@ -184,15 +247,11 @@ TLDNode *tldnode_create(char *tld) {
 }
 
 void tldnode_destory(TLDNode *node) {
-    // Make sure no null values entered
-    if (node != NULL) {
-        // Don't forget to free duplicated string and node 
-        // The children will be free in a parent call of tld_destory_recurrisive
-        // Do not use this function by itself, make sure to call ^
-        free(node->tld);
-        free(node);
-    }
-    
+    // Don't forget to free duplicated string and node 
+    // The children will be free in a parent call of tld_destory_recurrisive
+    // Do not use this function by itself, make sure to call ^
+    free(node->tld);
+    free(node);
 }
 
 // Compares the values of two Strings
@@ -240,7 +299,7 @@ int stack_push(Stack *stack, TLDNode *tldnode) {
     // Create a node new containing the node of the tldlist
     Node* node = node_create(tldnode);
 
-    // If ran out of memory return null
+    // If ran out of memory return 0
     if (node == NULL) { return 0; }
 
     // Change the header to the new node
@@ -250,16 +309,20 @@ int stack_push(Stack *stack, TLDNode *tldnode) {
     return 1;
 }
 
-void stack_pop(Stack *stack) {
+TLDNode *stack_pop(Stack *stack) {
 
     // Make sure stack is not null
-    if (stack == NULL) { return; }
+    if (stack == NULL) { return NULL; }
 
     // Remove node from top of stack
     if (stack->header != NULL) {
+        TLDNode *tld = stack->header->value;
         Node *p = stack->header;
         stack->header = stack->header->next;
         node_destory(p);
+        return tld;
+    } else {
+        return NULL;
     }
 }
 
@@ -273,17 +336,11 @@ TLDNode *stack_top(Stack *stack) {
 }
 
 void stack_destory(Stack *stack) {
-
-    Node *p;
-
-    // Ensure stack is available
-    if (stack == NULL) { return; }
-
     // Before freeing stack, all nodes must be freed
     while (stack->header != NULL) {
-        p = stack->header;
+        Node *p = stack->header;
         stack->header = stack->header->next;
-        free(p);
+        node_destory(p);
     }
     free(stack);
 }
@@ -292,9 +349,10 @@ void stack_print(Stack *stack) {
     Node *p;
     p = stack->header;
     while (p != NULL) {
-        printf("%s \n", p->value->tld);
+        printf("%s|", p->value->tld);
         p = p->next;
     }
+    printf("\n");
 }
 
 Node *node_create(TLDNode *tldnode) {
@@ -313,7 +371,7 @@ Node *node_create(TLDNode *tldnode) {
 
 void node_destory(Node *node) {
     // Remove node from heap
-    if (node != NULL) { free(node); }
+    free(node);
 }
 
 int main() {
@@ -324,14 +382,21 @@ int main() {
     TLDList *list = tldlist_create(start,end);
 
     Date* test = date_create("05/09/2012");
-    tldlist_add(list, "it", test);
-    tldlist_add(list, "ddd", test);
-    tldlist_add(list, "ddd", test);
-    tldlist_add(list, "ddd", test);
-    tldlist_add(list, "ddd", test);
-    tldlist_add(list, "com", test);
-    tldlist_add(list, "nal", test);
-    tldlist_add(list, "lol", test);
+    tldlist_add(list, "7", test);
+    tldlist_add(list, "3", test);
+    tldlist_add(list, "1", test);
+    tldlist_add(list, "6", test);
+    tldlist_add(list, "4", test);
+    tldlist_add(list, "9", test);
+    tldlist_add(list, "8", test);
+    tldlist_add(list, "8", test);
+
+    TLDIterator *iter = tldlist_iter_create(list);
+    TLDNode *p = tldlist_iter_next(iter);
+    while (p != NULL) {
+        printf("%s |", p->tld);
+        p = tldlist_iter_next(iter);
+    }
 
     //tldlist_destroy(list);
     printf("dine\n ");
@@ -340,9 +405,16 @@ int main() {
     stack_push(stack, list->root->left);
     stack_push(stack, list->root->right);
     stack_push(stack, list->root->left->left);
-    stack_pop(stack);
-    stack_pop(stack);
-    stack_pop(stack);
+    TLDNode *d = stack_top(stack);
+
     stack_print(stack);
+    //stack_pop(stack);
+    stack_print(stack);
+    //stack_pop(stack);
+    stack_print(stack);
+    //stack_pop(stack);
+    stack_print(stack);
+    stack_destory(stack);
+    printf("Stack destoryed");
 
 }
