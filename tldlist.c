@@ -1,5 +1,6 @@
+#include <stdlib.h>
+#include <stdio.h>
 #include "tldlist.h"
-#include "date.c"
 
 
 // Definitions for each structure
@@ -14,7 +15,7 @@ typedef struct tldnode {
     struct tldnode *right;
     struct tldnode *left;
     char *tld;
-    int count;
+    long count;
 } TLDNode;
 
 typedef struct tlditerator {
@@ -246,6 +247,16 @@ TLDNode *tldnode_create(char *tld) {
     return node;
 }
 
+char *tldnode_tldname(TLDNode *node) {
+    return node->tld;
+}
+
+
+long tldnode_count(TLDNode *node) {
+    return node->count;
+}
+
+
 void tldnode_destory(TLDNode *node) {
     // Don't forget to free duplicated string and node 
     // The children will be free in a parent call of tld_destory_recurrisive
@@ -329,7 +340,7 @@ TLDNode *stack_pop(Stack *stack) {
 TLDNode *stack_top(Stack *stack) {
 
     // Make sure stack is not null
-    if (stack == NULL) { return; }
+    if (stack == NULL) { return NULL; }
 
     // Get the value at the top of the stack if it isn't null
     return (stack->header == NULL) ? NULL : stack->header->value;
@@ -374,47 +385,3 @@ void node_destory(Node *node) {
     free(node);
 }
 
-int main() {
-
-    Date* start = date_create("12/01/1999");
-    Date* end  = date_create("12/01/2020");
-
-    TLDList *list = tldlist_create(start,end);
-
-    Date* test = date_create("05/09/2012");
-    tldlist_add(list, "7", test);
-    tldlist_add(list, "3", test);
-    tldlist_add(list, "1", test);
-    tldlist_add(list, "6", test);
-    tldlist_add(list, "4", test);
-    tldlist_add(list, "9", test);
-    tldlist_add(list, "8", test);
-    tldlist_add(list, "8", test);
-
-    TLDIterator *iter = tldlist_iter_create(list);
-    TLDNode *p = tldlist_iter_next(iter);
-    while (p != NULL) {
-        printf("%s |", p->tld);
-        p = tldlist_iter_next(iter);
-    }
-
-    //tldlist_destroy(list);
-    printf("dine\n ");
-
-    Stack *stack = stack_create();
-    stack_push(stack, list->root->left);
-    stack_push(stack, list->root->right);
-    stack_push(stack, list->root->left->left);
-    TLDNode *d = stack_top(stack);
-
-    stack_print(stack);
-    //stack_pop(stack);
-    stack_print(stack);
-    //stack_pop(stack);
-    stack_print(stack);
-    //stack_pop(stack);
-    stack_print(stack);
-    stack_destory(stack);
-    printf("Stack destoryed");
-
-}
