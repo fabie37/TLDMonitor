@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "tldlist.h"
+//#include "tldlist.h"
+#include "date.c"
 
 
 // Definitions for each structure
@@ -14,8 +15,11 @@ typedef struct tldlist {
 typedef struct tldnode {
     struct tldnode *right;
     struct tldnode *left;
+    struct tldnode *parent;
     char *tld;
     long count;
+    long height;
+    long balance;
 } TLDNode;
 
 typedef struct tlditerator {
@@ -31,14 +35,23 @@ typedef struct node {
     struct tldnode *value;
 } Node;
 
-// File Specific Prototypes
-int tldlist_add_recurrsive(TLDNode *node, char* hostname);
+// Tree Impementation
+int tldlist_add_recurrsive(TLDNode *node, char* hostname, TLDList *list);
 long tldlist_count(TLDList *tld);
-TLDNode *tldnode_create(char *tld);
+TLDNode *tldnode_create(char *tld, TLDNode *parent);
 void tldnode_destory(TLDNode *node);
 void tldnode_destory_recursive(TLDNode *node);
-char *strduplicate(char *s);
-int strcompare(char *s, char *d);
+// AVL Implementations
+TLDNode *right_rotate(TLDNode *node);
+TLDNode *left_rotate(TLDNode *node);
+TLDNode *right_left_rotate(TLDNode *node);
+TLDNode *left_right_rotate(TLDNode *node);
+void setbalance(TLDNode *node);
+void rebalance(TLDNode *node, TLDList *list);
+int height(TLDNode *node);
+void reheight(TLDNode *node);
+long max(int a, int b);
+// Stack Implementation
 Stack *stack_create();
 void stack_destory(Stack *stack);
 TLDNode *stack_top(Stack *stack);
@@ -46,8 +59,16 @@ int stack_push(Stack *stack, TLDNode *tldnode);
 TLDNode *stack_pop(Stack *stack);
 Node *node_create(TLDNode *tldnode);
 void node_destory(Node *node);
+//  String Based Implementions
+char *strduplicate(char *s);
+int strcompare(char *s, char *d);
 
 
+/*
+/
+/ TLDList Implementation
+/
+*/
 
 TLDList *tldlist_create(Date *begin, Date *end) {
 
@@ -122,17 +143,16 @@ int tldlist_add(TLDList *tld, char *hostname, Date *d) {
 
     // Base Case: The List has no node for the root
     if (tld->root == NULL) {
-        tld->root = tldnode_create(hostname);
+        tld->root = tldnode_create(hostname, NULL);
         tld->additions += (success = (tld->root == NULL) ? 0 : 1);
-        return success;         // If unsuccessful, return 1, else 0
-    } else {
-        // If the list does have a root, search the tree for hostname and add it
-        tld->additions += (success = tldlist_add_recurrsive(tld->root, hostname));
-        return success;
-    }
+        return success;         // If unsuccessful, return 0, else 1
+    } 
+    // If the list does have a root, search the tree for hostname and add it
+    tld->additions += (success = tldlist_add_recurrsive(tld->root, hostname, tld));
+    return success;
 }
 
-int tldlist_add_recurrsive(TLDNode *node, char *hostname) {
+int tldlist_add_recurrsive(TLDNode *node, char *hostname, TLDList *list) {
     int str_cmp = strcompare(hostname, node->tld);  
 
     // Compare the hostname to the current node's hostname, if a match, add 1 to count
@@ -141,27 +161,148 @@ int tldlist_add_recurrsive(TLDNode *node, char *hostname) {
         return 1;
     }
     // If hostname doesn't match the comparison is less than the current tld
-    else if (str_cmp < 0) {
-        if (node->left == NULL) {
-            // If no left child, make one 
-            node->left = tldnode_create(hostname);
+    int goleft = str_cmp < 0;
+    TLDNode *child = goleft ? node->left : node->right;
+
+    if (child == NULL) {
+        if (goleft) {
+            node->left = tldnode_create(hostname,node);
+            rebalance(node, list);
             return (node->left == NULL ? 0 : 1);       // If can't make node, return 0
         } else {
-            // If a left child, exists - make a recursive call and return the result
-            return tldlist_add_recurrsive(node->left, hostname);
+            node->right = tldnode_create(hostname,node);
+            rebalance(node, list);
+            return (node->right == NULL ? 0 : 1);       // If can't make node, return 0
         }
     } else {
-        // Check the right child of node
-        if (node->right == NULL) {
-            // If no left child, make one 
-            node->right = tldnode_create(hostname);
-            return (node->right == NULL ? 0 : 1);       // If can't make node, return 0
-        } else {
-            // If a left child, exists - make a recursive call and return the result
-            return tldlist_add_recurrsive(node->right, hostname);
-        }
+        return tldlist_add_recurrsive(child, hostname,list);
     }
 }
+
+long tldlist_count(TLDList *tld) {
+    // Ensure passed tld is not null before turning a the number of sucessful additions
+    return (tld == NULL) ? 0 : tld->additions;
+}
+
+/*
+/
+/ AVL Implementation
+/
+*/
+
+long max(int a, int b) {
+    return (a > b) ? a : b;
+}
+
+void reheight(TLDNode *node) {
+    if (node != NULL) {
+        node->height = 1 + max(height(node->left), height(node->right));
+    }
+} 
+
+int height(TLDNode *node) {
+    if (node == NULL) {
+        return -1; 
+    } else {
+        return node->height;
+    }
+}
+
+void setbalance(TLDNode *node) {
+    reheight(node);
+    node->balance = height(node->right) - height(node->left);
+}
+
+void rebalance(TLDNode *node, TLDList *list) {
+    setbalance(node);
+
+    if (node->balance == -2) {
+        if (height(node->left->left) >= height(node->left->right)) {
+            node = right_rotate(node);
+        } else {
+            node = left_right_rotate(node);
+        }
+    } else if (node->balance == 2) {
+        if (height(node->right->right) >= height(node->right->left)) {
+            node = left_rotate(node);
+        } else {
+            node = right_left_rotate(node);
+        }
+    }
+
+    if (node->parent != NULL) {
+        rebalance(node->parent, list);
+    } else {
+        list->root = node;
+    }
+}
+
+TLDNode *left_rotate(TLDNode *node) {
+    TLDNode *temp = node->right;
+    temp->parent = node->parent;
+    node->right = temp->left;
+
+    if (node->right != NULL) {
+        node->right->parent = node;
+    }
+    
+    temp->left = node;
+    node->parent = temp;
+
+    if (temp->parent != NULL) {
+        if (temp->parent->right == node) {
+            temp->parent->right = temp;
+        } else {
+            temp->parent->left = temp;
+        }
+    }
+
+    setbalance(node);
+    setbalance(temp);
+
+    return temp;
+}
+
+TLDNode *right_rotate(TLDNode *node) {
+    TLDNode *temp = node->left;
+    temp->parent = node->parent;
+    node->left = temp->right;
+
+    if (node->left != NULL) {
+        node->left->parent = node;
+    }
+    
+    temp->right = node;
+    node->parent = temp;
+
+    if (temp->parent != NULL) {
+        if (temp->parent->right == node) {
+            temp->parent->right = temp;
+        } else {
+            temp->parent->left = temp;
+        }
+    }
+
+    setbalance(node);
+    setbalance(temp);
+
+    return temp;
+}
+
+TLDNode *left_right_rotate(TLDNode *node) {
+    node->left = left_rotate(node->left);
+    return right_rotate(node);
+}
+
+TLDNode *right_left_rotate(TLDNode *node) {
+    node->right = right_rotate(node->right);
+    return left_rotate(node);
+}
+/*
+/
+/ TLDIterator Implementation
+/
+*/
 
 TLDIterator *tldlist_iter_create(TLDList *tld) {
     
@@ -225,12 +366,14 @@ void tldlist_iter_destroy(TLDIterator *iter) {
     free(iter);
 }
 
-long tldlist_count(TLDList *tld) {
-    // Ensure passed tld is not null before turning a the number of sucessful additions
-    return (tld == NULL) ? 0 : tld->additions;
-}
 
-TLDNode *tldnode_create(char *tld) {
+/*
+/
+/ TLDNode Implementation
+/
+*/
+
+TLDNode *tldnode_create(char *tld, TLDNode *parent) {
     
     // Assign space for new node in the heap
     TLDNode *node = (TLDNode *) malloc(sizeof(TLDNode));
@@ -240,10 +383,13 @@ TLDNode *tldnode_create(char *tld) {
     if (domain == NULL || node == NULL) { return NULL; }
 
     // Assign members to the new node
-    node->left  = NULL;
-    node->right = NULL;
-    node->count = 1;
-    node->tld   = domain;
+    node->parent  = parent;
+    node->left    = NULL;
+    node->right   = NULL;
+    node->count   = 1;
+    node->tld     = domain;
+    node->height  = 0;
+    node->balance = 0;
     return node;
 }
 
@@ -264,6 +410,12 @@ void tldnode_destory(TLDNode *node) {
     free(node->tld);
     free(node);
 }
+
+/*
+/
+/ String Implementations
+/
+*/
 
 // Compares the values of two Strings
 // <0  : If first different character in s has a lesser value than d
@@ -289,6 +441,12 @@ char *strduplicate(char *str) {
     }
     return p;
 }
+
+/*
+/
+/ Stack Implementation
+/
+*/
 
 // Simple Stack implementation for iterator
 Stack *stack_create() {
@@ -356,16 +514,6 @@ void stack_destory(Stack *stack) {
     free(stack);
 }
 
-void stack_print(Stack *stack) {
-    Node *p;
-    p = stack->header;
-    while (p != NULL) {
-        printf("%s|", p->value->tld);
-        p = p->next;
-    }
-    printf("\n");
-}
-
 Node *node_create(TLDNode *tldnode) {
     
     // Allocate Space for new node
@@ -385,3 +533,34 @@ void node_destory(Node *node) {
     free(node);
 }
 
+
+/*
+    Testing Grounds
+*/
+/*
+int main() {
+
+    Date *begin = date_create("12/03/1999");
+    Date *end = date_create("12/03/2020");
+    Date *test = date_create("12/01/2013");
+    TLDList *list = tldlist_create(begin,end);
+    tldlist_add(list, "intel", test);
+    tldlist_add(list, "dcs", test);
+    tldlist_add(list, "mit", test);
+    tldlist_add(list, "cms", test);
+    tldlist_add(list, "informatik", test);
+    tldlist_add(list, "wiley", test);
+    tldlist_add(list, "fiat", test);
+    
+    TLDIterator *iter = tldlist_iter_create(list);
+    TLDNode *p = tldlist_iter_next(iter);
+    while (p != NULL) {
+        printf("Node: %s Count: %d \n", p->tld, p->count);
+        p = tldlist_iter_next(iter);
+    }
+    tldlist_destroy(list);
+    tldlist_iter_destroy(iter);
+    date_destroy(begin);
+    date_destroy(end);
+    
+} */
