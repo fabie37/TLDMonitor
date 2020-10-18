@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "tldlist.h"
+//#include "date.h"
 #include "date.h"
 #include <strings.h>
 
@@ -10,7 +11,6 @@ typedef struct tldlist {
     struct date *begin;
     struct date *end;
     struct tldnode *root;
-    long additions;
 } TLDList;
 
 typedef struct tldnode {
@@ -39,9 +39,12 @@ typedef struct node {
 // Tree Impementation
 int tldlist_add_recurrsive(TLDNode *node, char* hostname, TLDList *list);
 long tldlist_count(TLDList *tld);
+void tldlist_inorder_count(TLDNode *node, long *tally);
 TLDNode *tldnode_create(char *tld, TLDNode *parent);
 void tldnode_destory(TLDNode *node);
 void tldnode_destory_recursive(TLDNode *node);
+void iter_check(TLDList *tld);
+void tldlist_iter_test(TLDNode *root);
 // AVL Implementations
 TLDNode *right_rotate(TLDNode *node);
 TLDNode *left_rotate(TLDNode *node);
@@ -85,7 +88,6 @@ TLDList *tldlist_create(Date *begin, Date *end) {
     if (date_compare(begin, end) > 0) { return NULL; }
 
     // Assign new pointers as members of list
-    list->additions = 0;
     list->begin     = begin;
     list->end       = end;
     list->root      = root;
@@ -141,16 +143,18 @@ int tldlist_add(TLDList *tld, char *hostname, Date *d) {
     short int success;
 
     // Condition Check: See if given date is within user's time peroid
-    if (date_compare(d,tld->begin) < 0 || date_compare(d,tld->end) > 0) { return 0; }
+    if (date_compare(d,tld->begin) < 0 || date_compare(d,tld->end) > 0) { 
+        return 0; 
+    }
 
     // Base Case: The List has no node for the root
     if (tld->root == NULL) {
         tld->root = tldnode_create(hostname, NULL);
-        tld->additions += (success = (tld->root == NULL) ? 0 : 1);
+        success = (tld->root == NULL) ? 0 : 1;
         return success;         // If unsuccessful, return 0, else 1
     } 
     // If the list does have a root, search the tree for hostname and add it
-    tld->additions += (success = tldlist_add_recurrsive(tld->root, hostname, tld));
+    success = tldlist_add_recurrsive(tld->root, hostname, tld);
     return success;
 }
 
@@ -187,7 +191,18 @@ int tldlist_add_recurrsive(TLDNode *node, char *hostname, TLDList *list) {
 
 long tldlist_count(TLDList *tld) {
     // Ensure passed tld is not null before turning a the number of sucessful additions
-    return (tld == NULL) ? 0 : tld->additions;
+    long tally = 0;
+    tldlist_inorder_count(tld->root, &tally);
+    return tally;
+}
+
+void tldlist_inorder_count(TLDNode *node, long *tally) {
+    if (node == NULL) {
+        return ;
+    }
+    tldlist_inorder_count(node->left, tally);
+    *tally += tldnode_count(node);
+    tldlist_inorder_count(node->right, tally);
 }
 
 /*
@@ -372,6 +387,16 @@ void tldlist_iter_destroy(TLDIterator *iter) {
     free(iter);
 }
 
+void iter_check(TLDList *tld) {
+    tldlist_iter_test(tld->root);
+}
+
+void tldlist_iter_test(TLDNode *root) {
+    if (root == NULL) { return; }
+    tldlist_iter_test(root->left);
+    printf("%d %s\n", root->count, root->tld);
+    tldlist_iter_test(root->right);
+}
 
 /*
 /
@@ -561,6 +586,7 @@ void node_destory(Node *node) {
     Testing Grounds
 */
 /*
+
 int main() {
 
     Date *begin = date_create("12/03/1999");
@@ -577,6 +603,7 @@ int main() {
     tldlist_add(list, "uk", test);
     tldlist_add(list, "uk", test);
     tldlist_add(list, "uk", test);
+    tldlist_count(list);
     
     TLDIterator *iter = tldlist_iter_create(list);
     TLDNode *p = tldlist_iter_next(iter);

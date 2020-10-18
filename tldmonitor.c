@@ -1,6 +1,6 @@
-//#include "date.h"
-//#include "tldlist.c"
+#include "date.h"
 #include "tldlist.h"
+//#include "tldlist.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -87,8 +87,10 @@ int main(int argc, char *argv[]) {
         goto error;
     }
     while ((n = tldlist_iter_next(it))) {
-        printf("%6.2f %s\n", 100.0 * (double)tldnode_count(n)/total, tldnode_tldname(n));
+        //printf("%6.2f %s %d\n", 100.0 * (double)tldnode_count(n)/total, tldnode_tldname(n));
     }
+    iter_check(tld);
+    //printf("%d",tldlist_count(tld));
     tldlist_iter_destroy(it);
     tldlist_destroy(tld);
     date_destroy(begin);
