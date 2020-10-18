@@ -1,6 +1,6 @@
 //#include "date.h"
 //#include "tldlist.c"
-#include "tldlist.c"
+#include "tldlist.h"
 #include <stdio.h>
 #include <string.h>
 

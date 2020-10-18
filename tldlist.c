@@ -1,7 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
-//#include "tldlist.h"
-#include "date.c"
+#include "tldlist.h"
+#include "date.h"
+#include <strings.h>
 
 
 // Definitions for each structure
@@ -427,10 +428,11 @@ void tldnode_destory(TLDNode *node) {
 // ==0 : Both strings are equal
 // >0  : If first different character in s has a greater value than d
 int strcompare(char *s, char *d) {
-    int compar;
+    //int compar;
     // Record the difference in two strings 
-    while (((compar = (*(s++)-*(d++))) == 0) && *(s-1) != '\0' && *(d-1) != '\0') {}
-    return compar;
+    //while (((compar = (*(s++)-*(d++))) == 0) && *(s-1) != '\0' && *(d-1) != '\0') {}
+    //return compar;
+    return strcasecmp(s,d);
 }
 
 // Duplicate String and save it to heap
