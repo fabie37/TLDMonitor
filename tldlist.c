@@ -62,6 +62,7 @@ void node_destory(Node *node);
 //  String Based Implementions
 char *strduplicate(char *s);
 int strcompare(char *s, char *d);
+char *tldstrip(char *s);
 
 
 /*
@@ -153,7 +154,9 @@ int tldlist_add(TLDList *tld, char *hostname, Date *d) {
 }
 
 int tldlist_add_recurrsive(TLDNode *node, char *hostname, TLDList *list) {
-    int str_cmp = strcompare(hostname, node->tld);  
+    char *temp  = tldstrip(hostname);
+    int str_cmp = strcompare(temp, node->tld);  
+    free(temp);
 
     // Compare the hostname to the current node's hostname, if a match, add 1 to count
     if (str_cmp == 0) {
@@ -166,13 +169,15 @@ int tldlist_add_recurrsive(TLDNode *node, char *hostname, TLDList *list) {
 
     if (child == NULL) {
         if (goleft) {
-            node->left = tldnode_create(hostname,node);
+            TLDNode *new = tldnode_create(hostname,node);
+            node->left = new;
             rebalance(node, list);
-            return (node->left == NULL ? 0 : 1);       // If can't make node, return 0
+            return (new == NULL ? 0 : 1);       // If can't make node, return 0
         } else {
-            node->right = tldnode_create(hostname,node);
+            TLDNode *new = tldnode_create(hostname,node);
+            node->right = new;
             rebalance(node, list);
-            return (node->right == NULL ? 0 : 1);       // If can't make node, return 0
+            return (new == NULL ? 0 : 1);       // If can't make node, return 0
         }
     } else {
         return tldlist_add_recurrsive(child, hostname,list);
@@ -377,7 +382,7 @@ TLDNode *tldnode_create(char *tld, TLDNode *parent) {
     
     // Assign space for new node in the heap
     TLDNode *node = (TLDNode *) malloc(sizeof(TLDNode));
-    char *domain = strduplicate(tld);
+    char *domain = tldstrip(tld);
 
     // If Malloc fails for either of the calls, return null
     if (domain == NULL || node == NULL) { return NULL; }
@@ -440,6 +445,22 @@ char *strduplicate(char *str) {
         for (int i=0; (p[i] = str[i]) != '\0'; i++) {}
     }
     return p;
+}
+
+char *tldstrip(char *str) {
+    char *p = strduplicate(str);
+    char *tld = p;
+    while(*(p++) != '\0') {
+        if (*p == '.') {
+            tld = ++p;
+        }
+    }
+    char *stripped = (char *) malloc(sizeof(char) * (p-tld));
+    if (stripped != NULL) {
+        for (int i=0; (stripped[i] = tld[i]) != '\0'; i++) {}
+    }
+    free(p);
+    return stripped;
 }
 
 /*
@@ -544,23 +565,30 @@ int main() {
     Date *end = date_create("12/03/2020");
     Date *test = date_create("12/01/2013");
     TLDList *list = tldlist_create(begin,end);
-    tldlist_add(list, "intel", test);
-    tldlist_add(list, "dcs", test);
-    tldlist_add(list, "mit", test);
-    tldlist_add(list, "cms", test);
-    tldlist_add(list, "informatik", test);
-    tldlist_add(list, "wiley", test);
-    tldlist_add(list, "fiat", test);
+    tldlist_add(list, "edu", test);
+    tldlist_add(list, "fr", test);
+    tldlist_add(list, "it", test);
+    tldlist_add(list, "com", test);
+    tldlist_add(list, "com", test);
+    tldlist_add(list, "de", test);
+    tldlist_add(list, "de", test);
+    tldlist_add(list, "uk", test);
+    tldlist_add(list, "uk", test);
+    tldlist_add(list, "uk", test);
     
     TLDIterator *iter = tldlist_iter_create(list);
     TLDNode *p = tldlist_iter_next(iter);
     while (p != NULL) {
-        printf("Node: %s Count: %d \n", p->tld, p->count);
+        printf("Node: %s Count: %ld \n", p->tld, p->count);
         p = tldlist_iter_next(iter);
     }
+
+    printf("%d", list->additions);
     tldlist_destroy(list);
     tldlist_iter_destroy(iter);
     date_destroy(begin);
     date_destroy(end);
+
     
-} */
+} 
+*/
