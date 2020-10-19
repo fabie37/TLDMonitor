@@ -22,16 +22,30 @@ Date *date_create(char *datestr) {
     date->month = getNumber(datestr, &pos, MONTHS);
     date->year = getNumber(datestr, &pos, YEARS);
     
+    // Make sure date is in correct format
     if (date->day == -1 || date->month == -1 || date->year == -1) {
         date_destroy(date);
         return NULL;
     } 
     
+    // Make sure date is completely valid in calander
+    int daysinmonth[] = {0,31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+    if ((!(date->year % 4) && date->year % 100) || !(date->year % 400)) {
+        daysinmonth[1] = 29;
+    }
+    
+    if (date->day <= 0 || date->day > daysinmonth[date->month]) {
+        date_destroy(date);
+        return NULL;
+    }
+
     return date;
 }
 
-int date_compare(Date *date1, Date *date2) {
-    int d_1 = date1->day + date1->month*100 + date1->year*1000;
+int date_compare(Date *d1, Date *d2) {
+
+    /*int d_1 = date1->day + date1->month*100 + date1->year*1000;
     int d_2 = date2->day + date2->month*100 + date2->year*1000;
 
     if (d_1 > d_2) {
@@ -40,7 +54,28 @@ int date_compare(Date *date1, Date *date2) {
         return 0;
     } else {
         return -1;
+    } */
+
+    if (d1->year < d2->year)
+       return -1;
+
+    else if (d1->year > d2->year)
+       return 1;
+
+    if (d1->year == d2->year)
+    {
+         if (d1->month<d2->month)
+              return -1;
+         else if (d1->month>d2->month)
+              return 1;
+         else if (d1->day<d2->day)
+              return -1;
+         else if(d1->day>d2->day)
+              return 1;
+         else
+              return 0;
     }
+
 }
 
 Date *date_duplicate(Date *d) {

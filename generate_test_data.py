@@ -32,6 +32,9 @@ def random_date(start, end):
 
 #Generate a date obj form a string
 def date_string(string):
+    """
+    This function generates a date obj from a given string of '##/##/####'
+    """
     return datetime.strptime(string, "%d/%m/%Y")
 
 # Generate test data
@@ -51,8 +54,29 @@ def generate_test_data(start, end, numb_entries):
     
     return test_data
 
+# input test data
+def input_test_data(filename):
+    '''
+    This function takes in just the filename of the test large.txt and small.txt and puts them into a np array
+    '''
+    # input data array
+    data = []
+
+    # Read lines from file
+    with open(filename+".txt", 'r') as f:
+        for line in f:
+            data.append(line.strip().split(' '))
+            
+    data_array = np.asarray(data)
+    return data_array
+
 # Output To Files
-def output_test_data(filename, test_data, narrow_start=None, narrow_end=None):
+def output_test_data(test_data, narrow_start=None, narrow_end=None, filename="test"):
+    '''
+    This out outputs the same output as the coursework conditions to two files
+    One outputs the dates with the Domains (date, domain) -> test.txt
+    The other with a similar output to coursework spec (percentage, tld) -> test.out
+    '''
     # Write to file
     with open(filename+".txt", "w") as f:
         for data in test_data:
@@ -70,14 +94,31 @@ def output_test_data(filename, test_data, narrow_start=None, narrow_end=None):
             stats[str(data[1]).split(".")[-1]] = stats.get(str(data[1]).split(".")[-1], 0) + 1
 
     # Output results into a readable format
-    sortedstats = { k:v for k,v in sorted(stats.items(), key=lambda item: item[1]) }
+    sortedstats = { k:v for k,v in sorted(stats.items(), key=lambda item: (item[1],item[0]))}
     total = sum(sortedstats.values())
     with open(filename+".out", "w") as f:
         for (key,value) in sortedstats.items():
-            f.write(str(round((value/total)*100, 2)) + " " + key + " " + str(value) +"\n")
-
+            f.write('{:.2f}'.format(round((value/total)*100, 2)).rjust(6,' ') + " " + key + "\n")
+            
     print(total)
 
-test_data = generate_test_data("12/01/1999","20/02/2020", 1000000)
-output_test_data("test", test_data, "12/07/2017", "12/07/2018")
-#output_test_data("test", test_data)
+'''
+    Example Code:
+    200,000 domains that were logged since 12/01/1999 to 20/02/2020
+    Output of percentages for each TLD from 01/01/2017 to 01/09/2020
+'''
+###
+test_data = generate_test_data("12/01/1999","20/02/2020", 200000)
+output_test_data(test_data, "01/01/2017", "01/09/2020")
+###
+
+''' 
+    Example Code:
+    Take the large.txt and put into numpy array
+    Change the range of the output percentages 
+'''
+###
+#test_data = input_test_data("large")
+#output_test_data(test_data, "01/01/2017", "01/09/2020")
+###
+

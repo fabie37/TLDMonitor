@@ -65,7 +65,7 @@ Node *node_create(TLDNode *tldnode);
 void node_destory(Node *node);
 //  String Based Implementions
 char *strduplicate(char *s);
-int strcompare(char *s, char *d);
+int strcompared(char *s, char *d);
 char *tldstrip(char *s);
 
 
@@ -143,7 +143,12 @@ int tldlist_add(TLDList *tld, char *hostname, Date *d) {
     short int success = -1;
 
     // Condition Check: See if given date is within user's time peroid
-    if (date_compare(d,tld->begin) < 0 || date_compare(d,tld->end) > 0) { return 0; }
+    if (d == NULL || hostname == NULL || tld == NULL) { 
+        return 0; 
+    }
+    if (date_compare(d,tld->begin) < 0 || date_compare(d,tld->end) > 0) { 
+        return 0; 
+    }
 
     // Base Case: The List has no node for the root
     if (tld->root == NULL) {
@@ -156,7 +161,7 @@ int tldlist_add(TLDList *tld, char *hostname, Date *d) {
     while (success == -1) {
         // So we need the domain's TLD so we'll strip it and compare it to the current node's TLD
         char *temp  = tldstrip(hostname);
-        int tld_diff = strcompare(temp, node->tld);  
+        int tld_diff = strcompared(temp, node->tld);  
         free(temp);
 
         // If current node's TLD is equal to the one we're searching for then add one to count
@@ -383,7 +388,6 @@ TLDNode *tldlist_iter_next(TLDIterator *iter) {
         stack_push(history, current_node->right);
         stack_push(history, current_node->left);
     }
-    
     return current_node;
 }
 
@@ -401,7 +405,7 @@ void iter_check(TLDList *tld) {
 void tldlist_iter_test(TLDNode *root) {
     if (root == NULL) { return; }
     tldlist_iter_test(root->left);
-    printf("%d %s\n", root->count, root->tld);
+    printf("%s ", root->tld);
     tldlist_iter_test(root->right);
 }
 
@@ -459,8 +463,8 @@ void tldnode_destory(TLDNode *node) {
 // <0  : If first different character in s has a lesser value than d
 // ==0 : Both strings are equal
 // >0  : If first different character in s has a greater value than d
-int strcompare(char *s, char *d) {
-    //int compar;
+int strcompared(char *s, char *d) {
+    int compar;
     // Record the difference in two strings 
     //while (((compar = (*(s++)-*(d++))) == 0) && *(s-1) != '\0' && *(d-1) != '\0') {}
     //return compar;
@@ -593,38 +597,220 @@ void node_destory(Node *node) {
     Testing Grounds
 */
 /*
-
-int main() {
-
-    Date *begin = date_create("12/03/1999");
-    Date *end = date_create("12/03/2020");
-    Date *test = date_create("12/01/2013");
-    TLDList *list = tldlist_create(begin,end);
-    tldlist_add(list, "edu", test);
-    tldlist_add(list, "fr", test);
-    tldlist_add(list, "it", test);
-    tldlist_add(list, "com", test);
-    tldlist_add(list, "com", test);
-    tldlist_add(list, "de", test);
-    tldlist_add(list, "de", test);
-    tldlist_add(list, "uk", test);
-    tldlist_add(list, "uk", test);
-    tldlist_add(list, "uk", test);
-    tldlist_count(list);
-    
+void print_results(TLDList *list) {
+    // Print in order
+    iter_check(list);
+    printf("\n");
+    // Count number of additions
+    printf("%d",tldlist_count(list));
+    printf("\n");
+    // Reveal nodes in tree
     TLDIterator *iter = tldlist_iter_create(list);
     TLDNode *p = tldlist_iter_next(iter);
     while (p != NULL) {
         printf("Node: %s Count: %ld \n", p->tld, p->count);
         p = tldlist_iter_next(iter);
     }
-
-    printf("%d", list->additions);
-    tldlist_destroy(list);
     tldlist_iter_destroy(iter);
-    date_destroy(begin);
-    date_destroy(end);
+}
+
+void print_hostname(char *s) {
+    char *temp = tldstrip(s);
+    printf("%s \n", temp);
+    free(temp);
+}
+
+void compare_hostname(char *a, char *b) {
+
+    char *atemp = tldstrip(a);
+    char *btemp = tldstrip(b);
+
+    int cmp = strcompared(atemp, btemp);
+
+    if (cmp > 0) {
+        printf("%s is greater than %s\n", atemp, btemp);
+    } else if (cmp == 0) {
+        printf("%s is equal to %s\n", atemp, btemp);
+    } else {
+        printf("%s is less than %s\n", atemp, btemp);
+    }
+    free(atemp);
+    free(btemp);
+}
+
+void compare_dates(Date *d1, Date *d2) {
+    int cmp = date_compare(d1,d2);
+
+    if (cmp < 0) {
+        printf("%d/%d/%d is before %d/%d/%d", d1->day,d1->month,d1->year,d2->day,d2->month,d2->year);
+    } else if (cmp == 0) {
+        printf("%d/%d/%d are the same before %d/%d/%d", d1->day,d1->month,d1->year,d2->day,d2->month,d2->year);
+    } else {
+        printf("%d/%d/%d is after %d/%d/%d", d1->day,d1->month,d1->year,d2->day,d2->month,d2->year);
+    }
+
+}
+
+void compare_dates_range(Date *begin, Date *end, Date *d) {
+    int begincmp = date_compare(d,begin);
+    int endcmp = date_compare(d,end);
+
+    if (begincmp > 0 && endcmp < 0) {
+        printf("\nDate is in range!\n");
+    } else if (begincmp == 0 && endcmp == 0) {
+        printf("\nBegin, end and date are the same\n");
+    } else if (begincmp < 0 || endcmp > 0) {
+        printf("\nDate is out of bounds\n");
+    } else if (begincmp == 0) {
+        printf("\nDate is at the beginning\n");
+    } else if (endcmp == 0) {
+        printf("\nDate is at end\n");
+    }
+}
+
+int main() {
+
+    Date *begin = date_create("12/03/1999");
+    Date *end = date_create("12/03/2020");
+    Date *in = date_create("12/01/2013");
+    Date *under = date_create("11/03/1999");
+    Date *over = date_create("13/03/2020");
+    TLDList *a = tldlist_create(begin,end);
+    TLDList *a2 = tldlist_create(begin,end);
+    TLDList *a3 = tldlist_create(begin,end);
+    TLDList *b = tldlist_create(begin,end);
+    TLDList *b2 = tldlist_create(begin,end);
+    TLDList *b3 = tldlist_create(begin,end);
+    TLDList *c1 = tldlist_create(begin,end);
+    
+    // Test case a
+    printf("\n\nTest A1 \n");
+    tldlist_add(a, "20", in);
+    tldlist_add(a, "04", in);
+    tldlist_add(a, "15", in);
+    print_results(a);
+    
+    // Test for left right rotate
+    printf("\n\nTest A2 \n");
+    tldlist_add(a2, "20", in);
+    tldlist_add(a2, "04", in);
+    tldlist_add(a2, "26", in);
+    tldlist_add(a2, "03", in);
+    tldlist_add(a2, "09", in);
+    tldlist_add(a2, "15", in);
+    print_results(a2);
+
+    // Test for double left right rotate
+    printf("\n\nTest A3 \n");
+    tldlist_add(a3, "20", in);
+    tldlist_add(a3, "04", in);
+    tldlist_add(a3, "26", in);
+    tldlist_add(a3, "03", in);
+    tldlist_add(a3, "09", in);
+    tldlist_add(a3, "21", in);
+    tldlist_add(a3, "30", in);
+    tldlist_add(a3, "02", in);
+    tldlist_add(a3, "07", in);
+    tldlist_add(a3, "11", in);
+    tldlist_add(a3, "15", in);
+    print_results(a3); 
+
+    // Test for b
+    printf("\n\nTest B1 \n");
+    tldlist_add(b, "20", in);
+    tldlist_add(b, "04", in);
+    tldlist_add(b, "08", in);
+    print_results(b);
+
+    //
+    printf("\n\nTest B2 \n");
+    tldlist_add(b2, "20", in);
+    tldlist_add(b2, "04", in);
+    tldlist_add(b2, "26", in);
+    tldlist_add(b2, "03", in);
+    tldlist_add(b2, "09", in);
+    tldlist_add(b2, "08", in);
+    print_results(b2);
+
+    //
+    printf("\n\nTest B3 \n");
+    tldlist_add(b3, "20", in);
+    tldlist_add(b3, "04", in);
+    tldlist_add(b3, "26", in);
+    tldlist_add(b3, "03", in);
+    tldlist_add(b3, "09", in);
+    tldlist_add(b3, "21", in);
+    tldlist_add(b3, "30", in);
+    tldlist_add(b3, "02", in);
+    tldlist_add(b3, "07", in);
+    tldlist_add(b3, "11", in);
+    tldlist_add(b3, "08", in);
+    print_results(b3);
+
+    // Test for additions
+    printf("\n\nTest C1 \n");
+    tldlist_add(c1, "20", in);
+    tldlist_add(c1, "04", in);
+    tldlist_add(c1, "26", in);
+    tldlist_add(c1, "03", in);
+    tldlist_add(c1, "09", in);
+    tldlist_add(c1, "21", in);
+    tldlist_add(c1, "30", in);
+    tldlist_add(c1, "02", in);
+    tldlist_add(c1, "07", in);
+    tldlist_add(c1, "11", in);
+    tldlist_add(c1, "08", in);
+    tldlist_add(c1, "08", over);
+    tldlist_add(c1, "08", under);
+    tldlist_add(c1, "08", begin);
+    tldlist_add(c1, "08", end);
+    tldlist_add(c1, "08", in);
+    tldlist_add(c1, "02", over);
+    tldlist_add(c1, "02", under);
+    tldlist_add(c1, "02", begin);
+    tldlist_add(c1, "02", end);
+    tldlist_add(c1, "02", in);
+    print_results(c1);
+
+    // Test for input strings
+    printf("\n\nDomain Testing \n");
+    print_hostname("hello.co.uk");
+    print_hostname("msnbot.msn.com");
+    print_hostname("msnbot.msn.cc");
+    print_hostname("groupe02.ac-lille.fr");
+    print_hostname("cs168130.pp.htv.fi");
+
+    // Compare two closely related strings
+    // Should be greater
+    compare_hostname("msnbot.msn.com","msnbot.msn.cc");
+    // Should be lesser
+    compare_hostname("groupe02.ac-lille.fi","cs168130.pp.htv.fr");
+    // Should be equal
+    compare_hostname("groupe02.ac-lille.com","cs168130.pp.htv.com");
+    compare_hostname("groupe02.ac-lille.cccom","cs168130.pp.htv.cccom");
+    compare_hostname("mdk.rafael.co.il","gateway.iiap.res.in");
+
+    // Test for comparing dates
+    Date *ends = date_create("01/09/2020");
+    Date *begins = date_create("01/01/2017");
+    compare_dates(begins, ends);
+    
+    // Date for dates in range 
+    Date *onlarger = date_create("01/09/2020");
+    Date *onsmaller = date_create("01/01/2017");
+    Date *inrange1 = date_create("01/02/2017");
+    Date *inrange2 = date_create("31/08/2020");
+    Date *outbounds = date_create("31/12/2016");
+    compare_dates_range(begins, ends, onlarger);
+    compare_dates_range(begins, ends, onsmaller);
+    compare_dates_range(begins, ends, inrange1);
+    compare_dates_range(begins, ends, inrange2);
+    compare_dates_range(begins, ends, outbounds);
 
     
-} 
-*/
+    tldlist_destroy(a);
+    tldlist_destroy(a2);
+    tldlist_destroy(a3);
+    date_destroy(begin);
+    date_destroy(end);
+}  */

@@ -64,7 +64,4 @@ char *tldnode_tldname(TLDNode *node);
  */
 long tldnode_count(TLDNode *node);
 
-// DELETE ME
-void iter_check(TLDList *tld);
-
 #endif /* _TLDLIST_H_INCLUDED_ */
