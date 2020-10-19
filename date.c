@@ -45,17 +45,6 @@ Date *date_create(char *datestr) {
 
 int date_compare(Date *d1, Date *d2) {
 
-    /*int d_1 = date1->day + date1->month*100 + date1->year*1000;
-    int d_2 = date2->day + date2->month*100 + date2->year*1000;
-
-    if (d_1 > d_2) {
-        return 1;
-    } else if (d_1 == d_2) {
-        return 0;
-    } else {
-        return -1;
-    } */
-
     if (d1->year < d2->year)
        return -1;
 
