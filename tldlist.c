@@ -140,12 +140,10 @@ void tldnode_destory_recursive(TLDNode *node) {
 int tldlist_add(TLDList *tld, char *hostname, Date *d) {
 
     // Local Variable to keep track of successful addition
-    short int success;
+    short int success = -1;
 
     // Condition Check: See if given date is within user's time peroid
-    if (date_compare(d,tld->begin) < 0 || date_compare(d,tld->end) > 0) { 
-        return 0; 
-    }
+    if (date_compare(d,tld->begin) < 0 || date_compare(d,tld->end) > 0) { return 0; }
 
     // Base Case: The List has no node for the root
     if (tld->root == NULL) {
@@ -154,40 +152,43 @@ int tldlist_add(TLDList *tld, char *hostname, Date *d) {
         return success;         // If unsuccessful, return 0, else 1
     } 
     // If the list does have a root, search the tree for hostname and add it
-    success = tldlist_add_recurrsive(tld->root, hostname, tld);
+    TLDNode *node = tld->root;
+    while (success == -1) {
+        // So we need the domain's TLD so we'll strip it and compare it to the current node's TLD
+        char *temp  = tldstrip(hostname);
+        int tld_diff = strcompare(temp, node->tld);  
+        free(temp);
+
+        // If current node's TLD is equal to the one we're searching for then add one to count
+        if (tld_diff == 0) {
+            node->count += 1;
+            success = 1;
+        }
+        // Else we need to see if the tld is of greater or less value to the children of the current node
+        else {
+            // We'll also need to keep track of parent node just in case we need to add a node in this iteration
+            TLDNode *parent = node;
+            short goLeft = tld_diff < 0;
+            node = (goLeft) ? node->left : node->right;
+
+            // If the leaf we are look at is null then create a new node
+            // If we don't enter this, we continue down the tree
+            if (node == NULL) {
+                if (goLeft) {
+                    parent->left = tldnode_create(hostname, parent);
+                    success = (parent->left == NULL ? 0 : 1);
+                } else {
+                    parent->right = tldnode_create(hostname, parent);
+                    success = (parent->right == NULL ? 0 : 1);
+                }
+                // If we successfully added a node, rebalance the parent just incase the balance is off
+                if (success > 0) { rebalance(parent, tld); };
+            }
+        }
+    }
     return success;
 }
 
-int tldlist_add_recurrsive(TLDNode *node, char *hostname, TLDList *list) {
-    char *temp  = tldstrip(hostname);
-    int str_cmp = strcompare(temp, node->tld);  
-    free(temp);
-
-    // Compare the hostname to the current node's hostname, if a match, add 1 to count
-    if (str_cmp == 0) {
-        node->count += 1;
-        return 1;
-    }
-    // If hostname doesn't match the comparison is less than the current tld
-    int goleft = str_cmp < 0;
-    TLDNode *child = goleft ? node->left : node->right;
-
-    if (child == NULL) {
-        if (goleft) {
-            TLDNode *new = tldnode_create(hostname,node);
-            node->left = new;
-            rebalance(node, list);
-            return (new == NULL ? 0 : 1);       // If can't make node, return 0
-        } else {
-            TLDNode *new = tldnode_create(hostname,node);
-            node->right = new;
-            rebalance(node, list);
-            return (new == NULL ? 0 : 1);       // If can't make node, return 0
-        }
-    } else {
-        return tldlist_add_recurrsive(child, hostname,list);
-    }
-}
 
 long tldlist_count(TLDList *tld) {
     // Ensure passed tld is not null before turning a the number of sucessful additions
@@ -230,13 +231,17 @@ int height(TLDNode *node) {
 }
 
 void setbalance(TLDNode *node) {
+    // Just recalculate the height and set the new balance
     reheight(node);
     node->balance = height(node->right) - height(node->left);
 }
 
 void rebalance(TLDNode *node, TLDList *list) {
+    // Because we've just added a new node to this parent or moved it around, we'll need to check to see if it's in balance
     setbalance(node);
 
+    // If it's not in balance, ie the left or right subtrees do not maintain the AVL property of a height difference of 1,
+    // Then we'll need to rotate it's children to balance the tree
     if (node->balance == -2) {
         if (height(node->left->left) >= height(node->left->right)) {
             node = right_rotate(node);
@@ -251,73 +256,95 @@ void rebalance(TLDNode *node, TLDList *list) {
         }
     }
 
+    // If this returned node is the root, make it so, otherwise continue rebalancing the tree upwards
     if (node->parent != NULL) {
+        // Watch out, this is a recurisive function this could be a memory hog in a big tree - maybe a do while could solve this
         rebalance(node->parent, list);
     } else {
         list->root = node;
     }
 }
 
-TLDNode *left_rotate(TLDNode *node) {
-    TLDNode *temp = node->right;
-    temp->parent = node->parent;
-    node->right = temp->left;
+TLDNode *left_rotate(TLDNode *grandparent) {
+    // If we do a left rotate, the parent of the new node, is the granparent's right node
+    TLDNode *parent = grandparent->right;
 
-    if (node->right != NULL) {
-        node->right->parent = node;
+    // Since the parent will be on top of the grandparent, it's parent will be the grandparent's
+    parent->parent = grandparent->parent;
+    grandparent->right = parent->left;
+
+    // If the parent has a sub tree, make sure the subtree now points to the grandparent for it's parent
+    if (grandparent->right != NULL) {
+        grandparent->right->parent = grandparent;
     }
     
-    temp->left = node;
-    node->parent = temp;
+    // Flipping the parent and grandparent around
+    parent->left = grandparent;
+    grandparent->parent = parent;
 
-    if (temp->parent != NULL) {
-        if (temp->parent->right == node) {
-            temp->parent->right = temp;
+    // Check if new node isn't the root and if it isn't, update his parent's pointers to point to him
+    if (parent->parent != NULL) {
+        if (parent->parent->right == grandparent) {
+            parent->parent->right = parent;
         } else {
-            temp->parent->left = temp;
+            parent->parent->left = parent;
         }
     }
 
-    setbalance(node);
-    setbalance(temp);
+    // Because we have shifted nodes around, we'll need to check their heights and balance
+    setbalance(grandparent);
+    setbalance(parent);
 
-    return temp;
+    // Return the parent as a node, we'll need this to check if it's a root or not
+    return parent;
 }
 
-TLDNode *right_rotate(TLDNode *node) {
-    TLDNode *temp = node->left;
-    temp->parent = node->parent;
-    node->left = temp->right;
+TLDNode *right_rotate(TLDNode *grandparent) {
+    // If we do a right rotate, the parent of the new node, is the granparent's left node
+    TLDNode *parent = grandparent->left;
 
-    if (node->left != NULL) {
-        node->left->parent = node;
+    // Since the parent will be on top of the grandparent, it's parent will be the grandparent's
+    parent->parent = grandparent->parent;
+    
+    // If the parent has a sub tree, make sure the subtree now points to the grandparent for it's parent
+    grandparent->left = parent->right;
+    if (grandparent->left != NULL) {
+        grandparent->left->parent = grandparent;
     }
     
-    temp->right = node;
-    node->parent = temp;
+    // Flipping the parent and grandparent around
+    parent->right = grandparent;
+    grandparent->parent = parent;
 
-    if (temp->parent != NULL) {
-        if (temp->parent->right == node) {
-            temp->parent->right = temp;
+    // Check if new node isn't the root and if it isn't, update his parent's pointers to point to him
+    if (parent->parent != NULL) {
+        if (parent->parent->right == grandparent) {
+            parent->parent->right = parent;
         } else {
-            temp->parent->left = temp;
+            parent->parent->left = parent;
         }
     }
 
-    setbalance(node);
-    setbalance(temp);
+    // Because we have shifted nodes around, we'll need to check their heights and balance
+    setbalance(grandparent);
+    setbalance(parent);
 
-    return temp;
+    // Return the parent as a node, we'll need this to check if it's a root or not
+    return parent;
 }
 
-TLDNode *left_right_rotate(TLDNode *node) {
-    node->left = left_rotate(node->left);
-    return right_rotate(node);
+TLDNode *left_right_rotate(TLDNode *grandparent) {
+    // Rotate parent so we can do an easier rotation
+    grandparent->left = left_rotate(grandparent->left);
+    // Rotate grandparent
+    return right_rotate(grandparent);
 }
 
-TLDNode *right_left_rotate(TLDNode *node) {
-    node->right = right_rotate(node->right);
-    return left_rotate(node);
+TLDNode *right_left_rotate(TLDNode *grandparent) {
+    // Rotate parent so we can do an easier rotation
+    grandparent->right = right_rotate(grandparent->right);
+    // Rotate grandparent
+    return left_rotate(grandparent);
 }
 /*
 /
@@ -349,34 +376,14 @@ TLDNode *tldlist_iter_next(TLDIterator *iter) {
     // So let's take it step at a time
     // So the next node will be at the top of the history as the root is already there.
     Stack *history = iter->history;
-    TLDNode *current_node = stack_top(history);
+    TLDNode *current_node = stack_pop(history);
 
-    // Base case: If no more items return null
-    if (current_node == NULL) {
-        return current_node;
-    }
-    // First Case:If current node has a left child, continue down the tree
-    else if (current_node->left != NULL) {
-        stack_push(history, current_node->left);
-    } 
-    // Second Case: If current node doesn't have a left child but has a right child
-    else if (current_node->left == NULL && current_node->right != NULL) {
+    // Push current node's children to stack
+    if (current_node != NULL) {
         stack_push(history, current_node->right);
+        stack_push(history, current_node->left);
     }
-    // Third Case: If current node has no children, start to peel back history
-    else if (current_node->left == NULL && current_node->right == NULL) {
-        TLDNode *prev_node = stack_pop(history);
-        while (stack_top(history) != NULL && (stack_top(history)->right == prev_node || stack_top(history)->right == NULL)) {
-            prev_node = stack_pop(history);
-        }
-        if (stack_top(history) == NULL) {
-            return current_node;
-        }
-        else if (stack_top(history)->right != NULL) {
-            stack_push(history, stack_top(history)->right);
-        }
-    } 
-
+    
     return current_node;
 }
 
@@ -516,8 +523,8 @@ int stack_push(Stack *stack, TLDNode *tldnode) {
     // Create a node new containing the node of the tldlist
     Node* node = node_create(tldnode);
 
-    // If ran out of memory return 0
-    if (node == NULL) { return 0; }
+    // If ran out of memory return 0 or node given doesn't exist
+    if (node == NULL || tldnode == NULL) { return 0; }
 
     // Change the header to the new node
     node->next = stack->header;
@@ -533,11 +540,11 @@ TLDNode *stack_pop(Stack *stack) {
 
     // Remove node from top of stack
     if (stack->header != NULL) {
-        TLDNode *tld = stack->header->value;
+        TLDNode *node = stack->header->value;
         Node *p = stack->header;
         stack->header = stack->header->next;
         node_destory(p);
-        return tld;
+        return node;
     } else {
         return NULL;
     }
