@@ -406,17 +406,6 @@ void tldlist_iter_destroy(TLDIterator *iter) {
     free(iter);
 }
 
-void iter_check(TLDList *tld) {
-    tldlist_iter_test(tld->root);
-}
-
-void tldlist_iter_test(TLDNode *root) {
-    if (root == NULL) { return; }
-    tldlist_iter_test(root->left);
-    printf("%s ", root->tld);
-    tldlist_iter_test(root->right);
-}
-
 /*
 /
 / TLDNode Implementation
@@ -500,6 +489,17 @@ char *tldstrip(char *str) {
     Testing Grounds
 */
 /*
+void iter_check(TLDList *tld) {
+    tldlist_iter_test(tld->root);
+}
+
+void tldlist_iter_test(TLDNode *root) {
+    if (root == NULL) { return; }
+    tldlist_iter_test(root->left);
+    printf("%s ", root->tld);
+    tldlist_iter_test(root->right);
+}
+
 void print_results(TLDList *list) {
     // Print in order
     iter_check(list);
