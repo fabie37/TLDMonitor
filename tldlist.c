@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "tldlist.h"
-//#include "date.h"
 #include "date.h"
 #include <strings.h>
 
@@ -489,6 +488,7 @@ char *tldstrip(char *str) {
     Testing Grounds
 */
 /*
+
 void iter_check(TLDList *tld) {
     tldlist_iter_test(tld->root);
 }
@@ -528,7 +528,7 @@ void compare_hostname(char *a, char *b) {
     char *atemp = tldstrip(a);
     char *btemp = tldstrip(b);
 
-    int cmp = strcompared(atemp, btemp);
+    int cmp = strcmp(atemp, btemp);
 
     if (cmp > 0) {
         printf("%s is greater than %s\n", atemp, btemp);
@@ -723,10 +723,27 @@ int main() {
     compare_dates_range(begins, ends, inrange2);
     compare_dates_range(begins, ends, outbounds);
 
+    // Test for bogus dates
+    printf("\nTest for bogus dates\n");
+    Date *bogus1 = date_create("000/00/0000");
+    printf("\n 000/00/0000 is this bogus? %ld", (bogus1 == NULL));
+    Date *bogus2 = date_create("00/000/0000");
+    printf("\n 00/000/0000 is this bogus? %ld", (bogus2 == NULL));
+    Date *bogus3 = date_create("00/000/000");
+    printf("\n 00/000/000 is this bogus? %ld", (bogus3 == NULL));
+    Date *bogus4 = date_create("ab/ab/abab");
+    printf("\n ab/ab/abab is this bogus? %ld", (bogus4 == NULL));
+    Date *bogus5 = date_create("leftleftleft");
+    printf("\n leftleftleft is this bogus? %ld", (bogus5 == NULL));
+    Date *bogus6 = date_create("///");
+    printf("\n /// is this bogus? %ld", (bogus6 == NULL));
+    Date *bogus7 = date_create("/");
+    printf("\n / is this bogus? %d", (bogus7 == NULL));
+
     
     tldlist_destroy(a);
     //tldlist_destroy(a2);
     //tldlist_destroy(a3);
     //date_destroy(begin);
     //date_destroy(end);
-}  */
+ } */  

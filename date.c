@@ -76,10 +76,10 @@ int getNumber(char *str, int *pos, enum FORMATING format) {
         }
         str++;
     }
-    *pos = (int)++str;
     if (format_count != 0) {
         return -1;
     } else {
+        *pos = (int)++str;
         return number;
     }
 }
