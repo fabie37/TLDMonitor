@@ -27,44 +27,26 @@ Date *date_create(char *datestr) {
         date_destroy(date);
         return NULL;
     } 
-    
-    // Make sure date is completely valid in calander
-    int daysinmonth[] = {0,31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-
-    if ((!(date->year % 4) && date->year % 100) || !(date->year % 400)) {
-        daysinmonth[1] = 29;
-    }
-    
-    if (date->day <= 0 || date->day > daysinmonth[date->month]) {
-        date_destroy(date);
-        return NULL;
-    }
-
     return date;
 }
 
 int date_compare(Date *d1, Date *d2) {
-
-    if (d1->year < d2->year)
+    if (d1->year == d2->year){
+        if (d1->month<d2->month)
+            return -1;
+        else if (d1->month>d2->month)
+            return 1;
+        else if (d1->day<d2->day)
+            return -1;
+        else if(d1->day>d2->day)
+            return 1;
+        else
+            return 0;
+    } else if (d1->year < d2->year) {
        return -1;
-
-    else if (d1->year > d2->year)
+    } else {
        return 1;
-
-    if (d1->year == d2->year)
-    {
-         if (d1->month<d2->month)
-              return -1;
-         else if (d1->month>d2->month)
-              return 1;
-         else if (d1->day<d2->day)
-              return -1;
-         else if(d1->day>d2->day)
-              return 1;
-         else
-              return 0;
     }
-
 }
 
 Date *date_duplicate(Date *d) {

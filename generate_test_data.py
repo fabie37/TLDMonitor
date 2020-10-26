@@ -10,7 +10,8 @@ def random_url():
     This function will return a random url.
     """
     letters = string.ascii_lowercase
-    tld_letters = ["c","o","m","i","u","d","e","p","k",'q','a']
+    tld_letters = ["c","o","m","s","l","k","b"]
+    #tld_letters = letters
     domain_len = randint(2,10)
     domain = "".join(choice(letters) for i in range(domain_len))
     bld_len = randint(0,3)
@@ -98,7 +99,7 @@ def output_test_data(test_data, narrow_start=None, narrow_end=None, filename="te
     total = sum(sortedstats.values())
     with open(filename+".out", "w") as f:
         for (key,value) in sortedstats.items():
-            f.write('{:.2f}'.format(round((value/total)*100, 2)).rjust(6,' ') + " " + key + "\n")
+            f.write('{:.2f}'.format(round((value/total)*100, 2)).rjust(6,' ') + " " + key + " " + str(value) +"\n")
             
     print(total)
 
@@ -108,8 +109,8 @@ def output_test_data(test_data, narrow_start=None, narrow_end=None, filename="te
     Output of percentages for each TLD from 01/01/2017 to 01/09/2020
 '''
 ###
-test_data = generate_test_data("12/01/1999","20/02/2020", 200000)
-output_test_data(test_data, "01/01/2017", "01/09/2020")
+test_data = generate_test_data("12/01/1999","20/01/2040", 1000000)
+output_test_data(test_data, "12/01/1999", "20/01/2040")
 ###
 
 ''' 

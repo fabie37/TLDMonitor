@@ -24,7 +24,8 @@ typedef struct tldnode {
 } TLDNode;
 
 typedef struct tlditerator {
-    struct stack *history;
+    struct tldnode *pointer;
+    int treeside;
 } TLDIterator;
 
 typedef struct stack {
@@ -55,17 +56,8 @@ void rebalance(TLDNode *node, TLDList *list);
 int height(TLDNode *node);
 void reheight(TLDNode *node);
 long max(int a, int b);
-// Stack Implementation
-Stack *stack_create();
-void stack_destory(Stack *stack);
-TLDNode *stack_top(Stack *stack);
-int stack_push(Stack *stack, TLDNode *tldnode);
-TLDNode *stack_pop(Stack *stack);
-Node *node_create(TLDNode *tldnode);
-void node_destory(Node *node);
 //  String Based Implementions
 char *strduplicate(char *s);
-int strcompared(char *s, char *d);
 char *tldstrip(char *s);
 
 
@@ -95,11 +87,6 @@ TLDList *tldlist_create(Date *begin, Date *end) {
 }
 
 void tldlist_destroy(TLDList *tld) {
-
-    // Free all dates from list
-    date_destroy(tld->begin);
-    date_destroy(tld->end);
-
     // Free all nodes in tree from heap
     tldnode_destory_recursive(tld->root);
 
@@ -161,7 +148,7 @@ int tldlist_add(TLDList *tld, char *hostname, Date *d) {
     while (success == -1) {
         // So we need the domain's TLD so we'll strip it and compare it to the current node's TLD
         char *temp  = tldstrip(hostname);
-        int tld_diff = strcompared(temp, node->tld);  
+        int tld_diff = strcasecmp(temp, node->tld);  
         free(temp);
 
         // If current node's TLD is equal to the one we're searching for then add one to count
@@ -361,40 +348,61 @@ TLDIterator *tldlist_iter_create(TLDList *tld) {
     
     // Assign space for new iterator and it's members in the heap
     TLDIterator *iter = (TLDIterator *) malloc(sizeof(TLDIterator));
-    Stack *history = stack_create();
 
     // If malloc fails then return null
-    if (iter == NULL || history == NULL) { return NULL; }
+    if (iter == NULL) { return NULL; }
 
-    // Assign the root of the tree to first in history list
-    stack_push(history, tld->root);
+    // Get root
+    TLDNode *root = tld->root;
 
     // Assign members to iterator
-    iter->history = history;
+    iter->pointer = root;
+    
+    // We will need to keep track of whether we are on the left (-1) or right (1) side of the tree
+    iter->treeside = 0;
     return iter;
 }
 
 TLDNode *tldlist_iter_next(TLDIterator *iter) {
+    // Time Complexity: O(log(n))
+    // We need to return the pointer in the iterator
+    TLDNode *old_ptr = iter->pointer;
 
-    // Iterate in depth-search fashion and in order.
+    // Ok, so we'll need to cover our bases
+    if (iter->pointer == NULL) { return NULL; }
 
-    // So let's take it step at a time
-    // So the next node will be at the top of the history as the root is already there.
-    Stack *history = iter->history;
-    TLDNode *current_node = stack_pop(history);
-
-    // Push current node's children to stack
-    if (current_node != NULL) {
-        stack_push(history, current_node->right);
-        stack_push(history, current_node->left);
+    // If we have the root of the tree and no children, return root, make null
+    if (iter->pointer->left == NULL && iter->pointer->right == NULL && iter->pointer->parent == NULL) {
+        iter->pointer = NULL;
+        return old_ptr;
     }
-    return current_node;
+
+    // Traverse down the tree left first
+    if (iter->pointer->left != NULL) {
+        iter->pointer = iter->pointer->left;
+    } 
+    // If we can't go left but we can go right, go right
+    else if (iter->pointer->left == NULL && iter->pointer->right != NULL) {
+        iter->pointer = iter->pointer->right;
+    }
+    // The node we're on has no children so 3 things can happen
+    // 1) The current node's parent's right child is not null so we point to that
+    // 2) We are the right child of the parent so we float up the tree untill we are not
+    // 3) We are the left child of the parent but the parent has no right child so we float up the tree until it does
+    else {
+        while ((iter->pointer == iter->pointer->parent->right) || ((iter->pointer == iter->pointer->parent->left) && iter->pointer->parent->right == NULL)) {
+            iter->pointer = iter->pointer->parent;
+            if (iter->pointer->parent == NULL) {
+                iter->pointer = NULL;
+                return old_ptr;
+            }
+        }
+        iter->pointer = iter->pointer->parent->right;
+    }
+    return old_ptr;
 }
 
 void tldlist_iter_destroy(TLDIterator *iter) {
-
-    // Make sure to remove iterator and it's dynamically allocated members off of the heap
-    stack_destory(iter->history);
     free(iter);
 }
 
@@ -458,19 +466,6 @@ void tldnode_destory(TLDNode *node) {
 / String Implementations
 /
 */
-
-// Compares the values of two Strings
-// <0  : If first different character in s has a lesser value than d
-// ==0 : Both strings are equal
-// >0  : If first different character in s has a greater value than d
-int strcompared(char *s, char *d) {
-    int compar;
-    // Record the difference in two strings 
-    //while (((compar = (*(s++)-*(d++))) == 0) && *(s-1) != '\0' && *(d-1) != '\0') {}
-    //return compar;
-    return strcasecmp(s,d);
-}
-
 // Duplicate String and save it to heap
 char *strduplicate(char *str) {
     // Get string length (p+1)-str
@@ -500,98 +495,6 @@ char *tldstrip(char *str) {
     free(p);
     return stripped;
 }
-
-/*
-/
-/ Stack Implementation
-/
-*/
-
-// Simple Stack implementation for iterator
-Stack *stack_create() {
-
-    // Allocate Space for new stack
-    Stack *stack = (Stack *) malloc(sizeof(stack));
-    
-    // If ran out of memory return null
-    if (stack == NULL) {return NULL;}
-
-    // Assign members to new stack
-    stack->header = NULL;
-    return stack;
-
-}
-
-int stack_push(Stack *stack, TLDNode *tldnode) {
-
-    // Create a node new containing the node of the tldlist
-    Node* node = node_create(tldnode);
-
-    // If ran out of memory return 0 or node given doesn't exist
-    if (node == NULL || tldnode == NULL) { return 0; }
-
-    // Change the header to the new node
-    node->next = stack->header;
-    stack->header = node;
-
-    return 1;
-}
-
-TLDNode *stack_pop(Stack *stack) {
-
-    // Make sure stack is not null
-    if (stack == NULL) { return NULL; }
-
-    // Remove node from top of stack
-    if (stack->header != NULL) {
-        TLDNode *node = stack->header->value;
-        Node *p = stack->header;
-        stack->header = stack->header->next;
-        node_destory(p);
-        return node;
-    } else {
-        return NULL;
-    }
-}
-
-TLDNode *stack_top(Stack *stack) {
-
-    // Make sure stack is not null
-    if (stack == NULL) { return NULL; }
-
-    // Get the value at the top of the stack if it isn't null
-    return (stack->header == NULL) ? NULL : stack->header->value;
-}
-
-void stack_destory(Stack *stack) {
-    // Before freeing stack, all nodes must be freed
-    while (stack->header != NULL) {
-        Node *p = stack->header;
-        stack->header = stack->header->next;
-        node_destory(p);
-    }
-    free(stack);
-}
-
-Node *node_create(TLDNode *tldnode) {
-    
-    // Allocate Space for new node
-    Node *newnode = (Node *) malloc(sizeof(Node));
-    
-    // If ran out of memory return null
-    if (newnode == NULL) {return NULL;}
-
-    // Assign members to new node
-    newnode->value = tldnode;
-    newnode->next  = NULL;
-    return newnode;
-}
-
-void node_destory(Node *node) {
-    // Remove node from heap
-    free(node);
-}
-
 
 /*
     Testing Grounds
@@ -675,6 +578,8 @@ int main() {
     Date *in = date_create("12/01/2013");
     Date *under = date_create("11/03/1999");
     Date *over = date_create("13/03/2020");
+    TLDList *omega = tldlist_create(begin,end);
+    TLDList *delta = tldlist_create(begin,end);
     TLDList *a = tldlist_create(begin,end);
     TLDList *a2 = tldlist_create(begin,end);
     TLDList *a3 = tldlist_create(begin,end);
@@ -682,6 +587,17 @@ int main() {
     TLDList *b2 = tldlist_create(begin,end);
     TLDList *b3 = tldlist_create(begin,end);
     TLDList *c1 = tldlist_create(begin,end);
+
+    // Test case omega and delta
+    printf("\n\nTest Omega \n");
+    tldlist_add(omega, "20", in);
+    tldlist_add(omega, "04", in);
+    print_results(omega);
+
+    printf("\n\nTest Delta \n");
+    tldlist_add(delta, "20", in);
+    tldlist_add(delta, "40", in);
+    print_results(delta);
     
     // Test case a
     printf("\n\nTest A1 \n");
@@ -774,7 +690,7 @@ int main() {
 
     // Test for input strings
     printf("\n\nDomain Testing \n");
-    print_hostname("hello.co.uk");
+    print_hostname("hello.co.ukkkkkk");
     print_hostname("msnbot.msn.com");
     print_hostname("msnbot.msn.cc");
     print_hostname("groupe02.ac-lille.fr");
@@ -809,8 +725,8 @@ int main() {
 
     
     tldlist_destroy(a);
-    tldlist_destroy(a2);
-    tldlist_destroy(a3);
-    date_destroy(begin);
-    date_destroy(end);
+    //tldlist_destroy(a2);
+    //tldlist_destroy(a3);
+    //date_destroy(begin);
+    //date_destroy(end);
 }  */
