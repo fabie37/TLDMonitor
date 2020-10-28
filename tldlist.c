@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "tldlist.h"
-#include "date.c"
+#include "date.h"
 #include <strings.h>
 
 
@@ -487,7 +487,7 @@ char *tldstrip(char *str) {
 /*
     Testing Grounds
 */
-
+/*
 void iter_check(TLDList *tld) {
     tldlist_iter_test(tld->root);
 }
@@ -758,4 +758,4 @@ int main() {
     //tldlist_destroy(a3);
     //date_destroy(begin);
     //date_destroy(end);
- } 
+ } */
