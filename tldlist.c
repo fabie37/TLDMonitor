@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "tldlist.h"
-#include "date.h"
+#include "date.c"
 #include <strings.h>
 
 
@@ -370,7 +370,7 @@ TLDNode *tldlist_iter_next(TLDIterator *iter) {
     // Ok, so we'll need to cover our bases
     if (iter->pointer == NULL) { return NULL; }
 
-    // If we have the root of the tree and no children, return root, make null
+    // If we have the root of the tree and no children, return root, now point to null
     if (iter->pointer->left == NULL && iter->pointer->right == NULL && iter->pointer->parent == NULL) {
         iter->pointer = NULL;
         return old_ptr;
@@ -487,7 +487,6 @@ char *tldstrip(char *str) {
 /*
     Testing Grounds
 */
-/*
 
 void iter_check(TLDList *tld) {
     tldlist_iter_test(tld->root);
@@ -717,10 +716,17 @@ int main() {
     Date *inrange1 = date_create("01/02/2017");
     Date *inrange2 = date_create("31/08/2020");
     Date *outbounds = date_create("31/12/2016");
+
+
+    printf("\n Should be on end");
     compare_dates_range(begins, ends, onlarger);
+    printf("\n Should be on start ");
     compare_dates_range(begins, ends, onsmaller);
+    printf("\n Should be in range");
     compare_dates_range(begins, ends, inrange1);
+    printf("\n Should be in range");
     compare_dates_range(begins, ends, inrange2);
+    printf("\n Should be outbounds");
     compare_dates_range(begins, ends, outbounds);
 
     // Test for bogus dates
@@ -739,6 +745,12 @@ int main() {
     printf("\n /// is this bogus? %ld", (bogus6 == NULL));
     Date *bogus7 = date_create("/");
     printf("\n / is this bogus? %d", (bogus7 == NULL));
+    Date *bogus8 = date_create("ab/12/1999");
+    printf("\n ab/12/1999 is this bogus? %d", (bogus8 == NULL));
+    Date *bogus9 = date_create("12/ab/1999");
+    printf("\n 12/ab/1999 is this bogus? %d", (bogus9 == NULL));
+    Date *bogus10 = date_create("11/0a/1922");
+    printf("\n 12/01/192a is this bogus? %d", (bogus10 == NULL));
 
     
     tldlist_destroy(a);
@@ -746,4 +758,4 @@ int main() {
     //tldlist_destroy(a3);
     //date_destroy(begin);
     //date_destroy(end);
- } */  
+ } 
