@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "tldlist.h"
 #include "date.h"
-#include <strings.h>
 
 
 // Definitions for each structure
@@ -56,7 +56,6 @@ int height(TLDNode *node);
 void reheight(TLDNode *node);
 long max(int a, int b);
 //  String Based Implementions
-char *strduplicate(char *s);
 char *tldstrip(char *s);
 
 
@@ -454,22 +453,10 @@ void tldnode_destory(TLDNode *node) {
 / String Implementations
 /
 */
-// Duplicate String and save it to heap
-char *strduplicate(char *str) {
-    // Get string length (p+1)-str
-    char *p = str;
-    while (*p != '\0') { p++; }
-    // Get space for pointer
-    p = (char *) malloc(sizeof(char) * ((++p)-str));
-    // Copy contents of str into p
-    if (p != NULL) {
-        for (int i=0; (p[i] = str[i]) != '\0'; i++) {}
-    }
-    return p;
-}
 
 char *tldstrip(char *str) {
-    char *p = strduplicate(str);
+    char *p = strdup(str);
+    char *p_star = p;
     char *tld = p;
     while(*(p++) != '\0') {
         if (*p == '.') {
@@ -480,7 +467,7 @@ char *tldstrip(char *str) {
     if (stripped != NULL) {
         for (int i=0; (stripped[i] = tld[i]) != '\0'; i++) {}
     }
-    free(p);
+    free(p_star);
     return stripped;
 }
 
