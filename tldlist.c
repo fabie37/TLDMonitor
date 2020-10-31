@@ -24,18 +24,13 @@ struct tldnode {
 
 struct tlditerator {
     struct tldnode *pointer;
-    int treeside;
 } ;
 
 // Tree Impementation
-int tldlist_add_recurrsive(TLDNode *node, char* hostname, TLDList *list);
-long tldlist_count(TLDList *tld);
 void tldlist_inorder_count(TLDNode *node, long *tally);
 TLDNode *tldnode_create(char *tld, TLDNode *parent);
 void tldnode_destory(TLDNode *node);
 void tldnode_destory_recursive(TLDNode *node);
-void iter_check(TLDList *tld);
-void tldlist_iter_test(TLDNode *root);
 // AVL Implementations
 TLDNode *right_rotate(TLDNode *node);
 TLDNode *left_rotate(TLDNode *node);
@@ -59,13 +54,14 @@ TLDList *tldlist_create(Date *begin, Date *end) {
 
     // Assign space for new list in the heap
     TLDList *list = (TLDList *) malloc(sizeof(TLDList));
-    TLDNode *root = NULL;
+    if (list == NULL) { return NULL; }
     
+    TLDNode *root = NULL;
     // If Malloc fails for either of the calls, return null
-    if (list == NULL || begin == NULL || end == NULL) { return NULL; }
+    if (begin == NULL || end == NULL) { free(list); return NULL; }
 
     // Ensure the start date is less than the end data
-    if (date_compare(begin, end) > 0) { return NULL; }
+    if (date_compare(begin, end) > 0) { free(list); return NULL; }
 
     // Assign new pointers as members of list
     list->begin     = begin;
@@ -346,9 +342,7 @@ TLDIterator *tldlist_iter_create(TLDList *tld) {
 
     // Assign members to iterator
     iter->pointer = root;
-    
-    // We will need to keep track of whether we are on the left (-1) or right (1) side of the tree
-    iter->treeside = 0;
+
     return iter;
 }
 
@@ -405,10 +399,10 @@ TLDNode *tldnode_create(char *tld, TLDNode *parent) {
     
     // Assign space for new node in the heap
     TLDNode *node = (TLDNode *) malloc(sizeof(TLDNode));
+    if (node == NULL) { return NULL; }
     char *domain = tldstrip(tld);
+    if (domain == NULL) { free(node); return NULL;}
 
-    // If Malloc fails for either of the calls, return null
-    if (domain == NULL || node == NULL) { return NULL; }
 
     // Assign members to the new node
     node->parent  = parent;
