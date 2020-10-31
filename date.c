@@ -32,7 +32,7 @@ Date *date_create(char *datestr) {
 }
 
 int date_compare(Date *date1, Date *date2) {
-    int comparison;
+    int comparison = 0;
     if (date1->year == date2->year){
         if (date1->month<date2->month) {
             comparison = -1;
