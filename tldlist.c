@@ -83,29 +83,24 @@ void tldnode_destory_recursive(TLDNode *node) {
     // This function recursively frees all linked nodes from a given input node
     // Base case: Node points to Null
     if (node == NULL) { return; }
-
     // First Case: Node's children points to null
     else if (node->left == NULL && node->right == NULL) { tldnode_destory(node); }
-
     // Second Case: Node's left child full but right child null
     else if (node->left != NULL && node->right == NULL) {
         tldnode_destory_recursive(node->left);
         tldnode_destory(node);
     }
-
     // Third Case: Node's right child full but left child null
     else if (node->left == NULL && node->right != NULL) {
         tldnode_destory_recursive(node->right);
         tldnode_destory(node);
     }
-
     // Fourth Case: Node has both full children
     else if (node->left != NULL && node->right != NULL) {
         tldnode_destory_recursive(node->left);
         tldnode_destory_recursive(node->right);
         tldnode_destory(node);
     }
-    return;
 }
 
 int tldlist_add(TLDList *tld, char *hostname, Date *d) {
