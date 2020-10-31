@@ -48,7 +48,20 @@ void reheight(TLDNode *node);
 long max(int a, int b);
 //  String Based Implementions
 char *tldstrip(char *s);
-
+int stringcompare(char *p1, char*p2) {
+    const unsigned char *s1 = (const unsigned char *) p1;
+    const unsigned char *s2 = (const unsigned char *) p2;
+    unsigned char c1, c2;
+    do
+        {
+        c1 = (unsigned char) *s1++;
+        c2 = (unsigned char) *s2++;
+        if (c1 == '\0')
+            return c1 - c2;
+        }
+    while (c1 == c2);
+    return c1 - c2;
+}
 
 /*
 /
@@ -138,7 +151,7 @@ int tldlist_add(TLDList *tld, char *hostname, Date *d) {
         // So we need the domain's TLD so we'll strip it and compare it to the current node's TLD
         char *temp  = tldstrip(hostname);
         if (temp == NULL) { success=0; break; }
-        int tld_diff = strcasecmp(temp, node->tld);  
+        int tld_diff = stringcompare(temp, node->tld);  
         free(temp);
 
         // If current node's TLD is equal to the one we're searching for then add one to count
