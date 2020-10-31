@@ -4,6 +4,7 @@
 
 // Macros and Enumerations
 enum FORMATING {DAYS = 2, MONTHS = 2, YEARS = 4};
+#define NUMB_BASE 10
 
 // Definitions for each structure
 struct date {
@@ -30,19 +31,19 @@ Date *date_create(char *datestr) {
     return date;
 }
 
-int date_compare(Date *d1, Date *d2) {
-    if (d1->year == d2->year){
-        if (d1->month<d2->month)
+int date_compare(Date *date1, Date *date2) {
+    if (date1->year == date2->year){
+        if (date1->month<date2->month)
             return -1;
-        else if (d1->month>d2->month)
+        else if (date1->month>date2->month)
             return 1;
-        else if (d1->day<d2->day)
+        else if (date1->day<date2->day)
             return -1;
-        else if(d1->day>d2->day)
+        else if(date1->day>date2->day)
             return 1;
         else
             return 0;
-    } else if (d1->year < d2->year) {
+    } else if (date1->year < date2->year) {
        return -1;
     } else {
        return 1;
@@ -70,18 +71,18 @@ int getNumber(char *str, int *pos, enum FORMATING format) {
     int format_count = format;
     str = str + (*pos);
     while (format_count >= 0 && *str != '/' && *str != '\0') {
-        format_count--;
         if (*str >= '0' && *str <= '9') {
-            number = number*10 + (int) (*str-'0');
+            number = number*NUMB_BASE + (int) (*str-'0');
         } else {
-            return -1;
+            break;
         }
+        format_count--;
         str++; (*pos)++;
     }
-    if (format_count != 0) {
-        return -1;
-    } else {
+    if (format_count == 0) {
         (*pos)++;
         return number;
+    } else {
+        return -1;
     }
 }
