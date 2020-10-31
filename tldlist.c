@@ -457,12 +457,13 @@ char *tldstrip(char *str) {
     if (p == NULL) { return NULL; }
     char *p_star = p;
     char *tld = p;
-    while(*(p++) != '\0') {
+    while(*p != '\0') {
         if (*p == '.') {
             tld = ++p;
         }
+        p++;
     }
-    char *stripped = (char *) malloc(sizeof(char) * (p-tld));
+    char *stripped = (char *) malloc(sizeof(char) * ((p+1)-tld));
     if (stripped != NULL) {
         for (int i=0; (stripped[i] = tld[i]) != '\0'; i++) {}
     }
