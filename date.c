@@ -33,16 +33,17 @@ Date *date_create(char *datestr) {
 
 int date_compare(Date *date1, Date *date2) {
     if (date1->year == date2->year){
-        if (date1->month<date2->month)
+        if (date1->month<date2->month) {
             return -1;
-        else if (date1->month>date2->month)
+        } else if (date1->month>date2->month) {
             return 1;
-        else if (date1->day<date2->day)
+        } else if (date1->day<date2->day) {
             return -1;
-        else if(date1->day>date2->day)
+        } else if(date1->day>date2->day) {
             return 1;
-        else
+        } else {
             return 0;
+        }
     } else if (date1->year < date2->year) {
        return -1;
     } else {
