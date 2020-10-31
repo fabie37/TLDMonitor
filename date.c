@@ -32,27 +32,29 @@ Date *date_create(char *datestr) {
 }
 
 int date_compare(Date *date1, Date *date2) {
+    int comparison;
     if (date1->year == date2->year){
         if (date1->month<date2->month) {
-            return -1;
+            comparison = -1;
         } else if (date1->month>date2->month) {
-            return 1;
+            comparison = 1;
         } else if (date1->day<date2->day) {
-            return -1;
+            comparison = -1;
         } else if(date1->day>date2->day) {
-            return 1;
+            comparison = 1;
         } else {
-            return 0;
+            comparison = 0;
         }
     } else if (date1->year < date2->year) {
-       return -1;
+       comparison = -1;
     } else {
-       return 1;
+       comparison = 1;
     }
+    return comparison;
 }
 
 Date *date_duplicate(Date *d) {
-    Date *date = malloc(sizeof(d));
+    Date *date = (Date *) malloc(sizeof(d));
     if (date != NULL) {
         *date = *d;
         return date;
