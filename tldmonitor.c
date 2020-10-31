@@ -1,5 +1,5 @@
-#include "date.h"
-#include "tldlist.h"
+#include "date.c"
+#include "tldlist.c"
 #include <stdio.h>
 #include <string.h>
 

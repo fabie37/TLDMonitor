@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "tldlist.h"
-#include "date.h"
+//#include "date.h"
 
 
 // Definitions for each structure
@@ -137,7 +137,13 @@ int tldlist_add(TLDList *tld, char *hostname, Date *d) {
     while (success == -1) {
         // So we need the domain's TLD so we'll strip it and compare it to the current node's TLD
         char *temp  = tldstrip(hostname);
-        if (temp == NULL) { success=0; break; }
+        if (temp == NULL) { 
+            success=0; break;
+        }
+        if (node == NULL || node->tld == NULL) { 
+            printf("tellme");
+            success=0; break;
+        }
         int tld_diff = strcasecmp(temp, node->tld);  
         free(temp);
 
