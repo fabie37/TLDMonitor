@@ -54,7 +54,7 @@ int date_compare(Date *date1, Date *date2) {
 }
 
 Date *date_duplicate(Date *d) {
-    Date *date = (Date *) malloc(sizeof(d));
+    Date *date = (Date *) malloc(sizeof(Date));
     if (date != NULL) {
         *date = *d;
         return date;
