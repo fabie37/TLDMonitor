@@ -32,10 +32,10 @@ TLDNode *tldnode_create(char *tld, TLDNode *parent);
 void tldnode_destory(TLDNode *node);
 void tldnode_destory_recursive(TLDNode *node);
 // AVL Implementations
-TLDNode *right_rotate(TLDNode *node);
-TLDNode *left_rotate(TLDNode *node);
-TLDNode *right_left_rotate(TLDNode *node);
-TLDNode *left_right_rotate(TLDNode *node);
+TLDNode *right_rotate(TLDNode *grandparent);
+TLDNode *left_rotate(TLDNode *grandparent);
+TLDNode *right_left_rotate(TLDNode *grandparent);
+TLDNode *left_right_rotate(TLDNode *grandparent);
 void setbalance(TLDNode *node);
 void rebalance(TLDNode *node, TLDList *list);
 int height(TLDNode *node);
