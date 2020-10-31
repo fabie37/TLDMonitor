@@ -6,11 +6,11 @@
 enum FORMATING { DAYS = 2, MONTHS = 2, YEARS = 4};
 
 // Definitions for each structure
-typedef struct date {
+struct date {
     int day;
     int month;
     int year;
-} Date;
+};
 
 // File Specific Prototypes
 int getNumber(char *str, int *pos, enum FORMATING format);

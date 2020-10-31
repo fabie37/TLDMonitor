@@ -6,13 +6,13 @@
 
 
 // Definitions for each structure
-typedef struct tldlist {
+struct tldlist {
     struct date *begin;
     struct date *end;
     struct tldnode *root;
-} TLDList;
+};
 
-typedef struct tldnode {
+struct tldnode {
     struct tldnode *right;
     struct tldnode *left;
     struct tldnode *parent;
@@ -20,21 +20,12 @@ typedef struct tldnode {
     long count;
     long height;
     long balance;
-} TLDNode;
+};
 
-typedef struct tlditerator {
+struct tlditerator {
     struct tldnode *pointer;
     int treeside;
-} TLDIterator;
-
-typedef struct stack {
-    struct node *header;
-} Stack;
-
-typedef struct node {
-    struct node *next;
-    struct tldnode *value;
-} Node;
+} ;
 
 // Tree Impementation
 int tldlist_add_recurrsive(TLDNode *node, char* hostname, TLDList *list);
