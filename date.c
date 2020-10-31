@@ -57,10 +57,10 @@ Date *date_duplicate(Date *d) {
     Date *date = (Date *) malloc(sizeof(Date));
     if (date != NULL) {
         *date = *d;
-        return date;
     } else {
         return NULL;
     }
+    return date;
 }
 
 void date_destroy(Date *d) {
@@ -84,8 +84,8 @@ int getNumber(char *str, int *pos, enum FORMATING format) {
     }
     if (format_count == 0) {
         (*pos)++;
-        return number;
     } else {
         return -1;
     }
+    return number;
 }
