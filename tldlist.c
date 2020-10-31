@@ -138,7 +138,9 @@ int tldlist_add(TLDList *tld, char *hostname, Date *d) {
         // So we need the domain's TLD so we'll strip it and compare it to the current node's TLD
         char *temp  = tldstrip(hostname);
         if (temp == NULL) { success=0; break; }
-        int tld_diff = strcmp(temp, node->tld);  
+        printf("%s", temp);
+        printf("%s", node->tld);
+        int tld_diff = strcasecmp(temp, node->tld);  
         free(temp);
 
         // If current node's TLD is equal to the one we're searching for then add one to count
