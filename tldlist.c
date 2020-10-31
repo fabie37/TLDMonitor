@@ -137,6 +137,7 @@ int tldlist_add(TLDList *tld, char *hostname, Date *d) {
     while (success == -1) {
         // So we need the domain's TLD so we'll strip it and compare it to the current node's TLD
         char *temp  = tldstrip(hostname);
+        if (temp == NULL) { success=0; break; }
         int tld_diff = strcasecmp(temp, node->tld);  
         free(temp);
 
@@ -447,6 +448,7 @@ void tldnode_destory(TLDNode *node) {
 
 char *tldstrip(char *str) {
     char *p = strdup(str);
+    if (p == NULL) { return NULL; }
     char *p_star = p;
     char *tld = p;
     while(*(p++) != '\0') {
