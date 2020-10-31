@@ -3,7 +3,7 @@
 #include "date.h"
 
 // Macros and Enumerations
-enum FORMATING { DAYS = 2, MONTHS = 2, YEARS = 4};
+enum FORMATING {DAYS = 2, MONTHS = 2, YEARS = 4};
 
 // Definitions for each structure
 struct date {
@@ -16,7 +16,7 @@ struct date {
 int getNumber(char *str, int *pos, enum FORMATING format);
 
 Date *date_create(char *datestr) {
-    Date *date = malloc(sizeof(Date));
+    Date *date = (Date *)malloc(sizeof(Date));
     int pos = 0;
     date->day = getNumber(datestr, &pos, DAYS);
     date->month = getNumber(datestr, &pos, MONTHS);
@@ -64,6 +64,7 @@ void date_destroy(Date *d) {
 }
 
 // Given a format such as in the FORMARTING enum, return whether or not a substring of a date string is in the correct format
+// If wrong format, return -1 
 int getNumber(char *str, int *pos, enum FORMATING format) {
     int number = 0;
     int format_count = format;
