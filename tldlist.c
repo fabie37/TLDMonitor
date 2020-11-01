@@ -1,5 +1,10 @@
-#include <stdlib.h>
+// SP Exercise 1A
+// Fabrizio Catinella
+// 2322021C
+// This is my own work as defined in the Academic Ethics agreement I have signed.
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "tldlist.h"
 #include "date.h"
@@ -26,9 +31,10 @@ struct tlditerator {
     struct tldnode *pointer;
 } ;
 
+// File Specific Prototypes
 // Tree Impementation
-void tldlist_inorder_count(TLDNode *node, long *tally);
 TLDNode *tldnode_create(char *tld, TLDNode *parent);
+void tldlist_inorder_count(TLDNode *node, long *tally);
 void tldnode_destory(TLDNode *node);
 void tldnode_destory_recursive(TLDNode *node);
 // AVL Implementations
@@ -125,6 +131,7 @@ int tldlist_add(TLDList *tld, char *hostname, Date *d) {
     // If the list does have a root, search the tree for hostname and add it
     TLDNode *node = tld->root;
     while (success == -1) {
+       
         // So we need the domain's TLD so we'll strip it and compare it to the current node's TLD
         char *temp  = tldstrip(hostname);
         if (temp == NULL) { success=0; break; }
@@ -143,7 +150,7 @@ int tldlist_add(TLDList *tld, char *hostname, Date *d) {
             short goLeft = tld_diff < 0;
             node = (goLeft) ? node->left : node->right;
 
-            // If the leaf we are look at is null then create a new node
+            // If the leaf we are looking at is null then create a new node
             // If we don't enter this, we continue down the tree
             if (node == NULL) {
                 if (goLeft) {
@@ -230,7 +237,6 @@ void rebalance(TLDNode *node, TLDList *list) {
 
     // If this returned node is the root, make it so, otherwise continue rebalancing the tree upwards
     if (node->parent != NULL) {
-        // Watch out, this is a recurisive function this could be a memory hog in a big tree - maybe a do while could solve this
         rebalance(node->parent, list);
     } else {
         list->root = node;
@@ -434,6 +440,7 @@ void tldnode_destory(TLDNode *node) {
 /
 */
 
+// Given an input domain, stip it down and return the TLD
 char *tldstrip(char *str) {
     char *p = strdup(str);
     if (p == NULL) { return NULL; }
@@ -452,279 +459,3 @@ char *tldstrip(char *str) {
     free(p_start);
     return stripped;
 }
-
-/*
-    Testing Grounds
-*/
-/*
-void iter_check(TLDList *tld) {
-    tldlist_iter_test(tld->root);
-}
-
-void tldlist_iter_test(TLDNode *root) {
-    if (root == NULL) { return; }
-    tldlist_iter_test(root->left);
-    printf("%s ", root->tld);
-    tldlist_iter_test(root->right);
-}
-
-void print_results(TLDList *list) {
-    // Print in order
-    iter_check(list);
-    printf("\n");
-    // Count number of additions
-    printf("%d",tldlist_count(list));
-    printf("\n");
-    // Reveal nodes in tree
-    TLDIterator *iter = tldlist_iter_create(list);
-    TLDNode *p = tldlist_iter_next(iter);
-    while (p != NULL) {
-        printf("Node: %s Count: %ld \n", p->tld, p->count);
-        p = tldlist_iter_next(iter);
-    }
-    tldlist_iter_destroy(iter);
-}
-
-void print_hostname(char *s) {
-    char *temp = tldstrip(s);
-    printf("%s \n", temp);
-    free(temp);
-}
-
-void compare_hostname(char *a, char *b) {
-
-    char *atemp = tldstrip(a);
-    char *btemp = tldstrip(b);
-
-    int cmp = strcmp(atemp, btemp);
-
-    if (cmp > 0) {
-        printf("%s is greater than %s\n", atemp, btemp);
-    } else if (cmp == 0) {
-        printf("%s is equal to %s\n", atemp, btemp);
-    } else {
-        printf("%s is less than %s\n", atemp, btemp);
-    }
-    free(atemp);
-    free(btemp);
-}
-
-void compare_dates(Date *d1, Date *d2) {
-    int cmp = date_compare(d1,d2);
-
-    if (cmp < 0) {
-        printf("%d/%d/%d is before %d/%d/%d", d1->day,d1->month,d1->year,d2->day,d2->month,d2->year);
-    } else if (cmp == 0) {
-        printf("%d/%d/%d are the same before %d/%d/%d", d1->day,d1->month,d1->year,d2->day,d2->month,d2->year);
-    } else {
-        printf("%d/%d/%d is after %d/%d/%d", d1->day,d1->month,d1->year,d2->day,d2->month,d2->year);
-    }
-
-}
-
-void compare_dates_range(Date *begin, Date *end, Date *d) {
-    int begincmp = date_compare(d,begin);
-    int endcmp = date_compare(d,end);
-
-    if (begincmp > 0 && endcmp < 0) {
-        printf("\nDate is in range!\n");
-    } else if (begincmp == 0 && endcmp == 0) {
-        printf("\nBegin, end and date are the same\n");
-    } else if (begincmp < 0 || endcmp > 0) {
-        printf("\nDate is out of bounds\n");
-    } else if (begincmp == 0) {
-        printf("\nDate is at the beginning\n");
-    } else if (endcmp == 0) {
-        printf("\nDate is at end\n");
-    }
-}
-
-int main() {
-
-    Date *begin = date_create("12/03/1999");
-    Date *end = date_create("12/03/2020");
-    Date *in = date_create("12/01/2013");
-    Date *under = date_create("11/03/1999");
-    Date *over = date_create("13/03/2020");
-    TLDList *omega = tldlist_create(begin,end);
-    TLDList *delta = tldlist_create(begin,end);
-    TLDList *a = tldlist_create(begin,end);
-    TLDList *a2 = tldlist_create(begin,end);
-    TLDList *a3 = tldlist_create(begin,end);
-    TLDList *b = tldlist_create(begin,end);
-    TLDList *b2 = tldlist_create(begin,end);
-    TLDList *b3 = tldlist_create(begin,end);
-    TLDList *c1 = tldlist_create(begin,end);
-
-    // Test case omega and delta
-    printf("\n\nTest Omega \n");
-    tldlist_add(omega, "20", in);
-    tldlist_add(omega, "04", in);
-    print_results(omega);
-
-    printf("\n\nTest Delta \n");
-    tldlist_add(delta, "20", in);
-    tldlist_add(delta, "40", in);
-    print_results(delta);
-    
-    // Test case a
-    printf("\n\nTest A1 \n");
-    tldlist_add(a, "20", in);
-    tldlist_add(a, "04", in);
-    tldlist_add(a, "15", in);
-    print_results(a);
-    
-    // Test for left right rotate
-    printf("\n\nTest A2 \n");
-    tldlist_add(a2, "20", in);
-    tldlist_add(a2, "04", in);
-    tldlist_add(a2, "26", in);
-    tldlist_add(a2, "03", in);
-    tldlist_add(a2, "09", in);
-    tldlist_add(a2, "15", in);
-    print_results(a2);
-
-    // Test for double left right rotate
-    printf("\n\nTest A3 \n");
-    tldlist_add(a3, "20", in);
-    tldlist_add(a3, "04", in);
-    tldlist_add(a3, "26", in);
-    tldlist_add(a3, "03", in);
-    tldlist_add(a3, "09", in);
-    tldlist_add(a3, "21", in);
-    tldlist_add(a3, "30", in);
-    tldlist_add(a3, "02", in);
-    tldlist_add(a3, "07", in);
-    tldlist_add(a3, "11", in);
-    tldlist_add(a3, "15", in);
-    print_results(a3); 
-
-    // Test for b
-    printf("\n\nTest B1 \n");
-    tldlist_add(b, "20", in);
-    tldlist_add(b, "04", in);
-    tldlist_add(b, "08", in);
-    print_results(b);
-
-    //
-    printf("\n\nTest B2 \n");
-    tldlist_add(b2, "20", in);
-    tldlist_add(b2, "04", in);
-    tldlist_add(b2, "26", in);
-    tldlist_add(b2, "03", in);
-    tldlist_add(b2, "09", in);
-    tldlist_add(b2, "08", in);
-    print_results(b2);
-
-    //
-    printf("\n\nTest B3 \n");
-    tldlist_add(b3, "20", in);
-    tldlist_add(b3, "04", in);
-    tldlist_add(b3, "26", in);
-    tldlist_add(b3, "03", in);
-    tldlist_add(b3, "09", in);
-    tldlist_add(b3, "21", in);
-    tldlist_add(b3, "30", in);
-    tldlist_add(b3, "02", in);
-    tldlist_add(b3, "07", in);
-    tldlist_add(b3, "11", in);
-    tldlist_add(b3, "08", in);
-    print_results(b3);
-
-    // Test for additions
-    printf("\n\nTest C1 \n");
-    tldlist_add(c1, "20", in);
-    tldlist_add(c1, "04", in);
-    tldlist_add(c1, "26", in);
-    tldlist_add(c1, "03", in);
-    tldlist_add(c1, "09", in);
-    tldlist_add(c1, "21", in);
-    tldlist_add(c1, "30", in);
-    tldlist_add(c1, "02", in);
-    tldlist_add(c1, "07", in);
-    tldlist_add(c1, "11", in);
-    tldlist_add(c1, "08", in);
-    tldlist_add(c1, "08", over);
-    tldlist_add(c1, "08", under);
-    tldlist_add(c1, "08", begin);
-    tldlist_add(c1, "08", end);
-    tldlist_add(c1, "08", in);
-    tldlist_add(c1, "02", over);
-    tldlist_add(c1, "02", under);
-    tldlist_add(c1, "02", begin);
-    tldlist_add(c1, "02", end);
-    tldlist_add(c1, "02", in);
-    print_results(c1);
-
-    // Test for input strings
-    printf("\n\nDomain Testing \n");
-    print_hostname("hello.co.ukkkkkk");
-    print_hostname("msnbot.msn.com");
-    print_hostname("msnbot.msn.cc");
-    print_hostname("groupe02.ac-lille.fr");
-    print_hostname("cs168130.pp.htv.fi");
-
-    // Compare two closely related strings
-    // Should be greater
-    compare_hostname("msnbot.msn.com","msnbot.msn.cc");
-    // Should be lesser
-    compare_hostname("groupe02.ac-lille.fi","cs168130.pp.htv.fr");
-    // Should be equal
-    compare_hostname("groupe02.ac-lille.com","cs168130.pp.htv.com");
-    compare_hostname("groupe02.ac-lille.cccom","cs168130.pp.htv.cccom");
-    compare_hostname("mdk.rafael.co.il","gateway.iiap.res.in");
-
-    // Test for comparing dates
-    Date *ends = date_create("01/09/2020");
-    Date *begins = date_create("01/01/2017");
-    compare_dates(begins, ends);
-    
-    // Date for dates in range 
-    Date *onlarger = date_create("01/09/2020");
-    Date *onsmaller = date_create("01/01/2017");
-    Date *inrange1 = date_create("01/02/2017");
-    Date *inrange2 = date_create("31/08/2020");
-    Date *outbounds = date_create("31/12/2016");
-
-
-    printf("\n Should be on end");
-    compare_dates_range(begins, ends, onlarger);
-    printf("\n Should be on start ");
-    compare_dates_range(begins, ends, onsmaller);
-    printf("\n Should be in range");
-    compare_dates_range(begins, ends, inrange1);
-    printf("\n Should be in range");
-    compare_dates_range(begins, ends, inrange2);
-    printf("\n Should be outbounds");
-    compare_dates_range(begins, ends, outbounds);
-
-    // Test for bogus dates
-    printf("\nTest for bogus dates\n");
-    Date *bogus1 = date_create("000/00/0000");
-    printf("\n 000/00/0000 is this bogus? %ld", (bogus1 == NULL));
-    Date *bogus2 = date_create("00/000/0000");
-    printf("\n 00/000/0000 is this bogus? %ld", (bogus2 == NULL));
-    Date *bogus3 = date_create("00/000/000");
-    printf("\n 00/000/000 is this bogus? %ld", (bogus3 == NULL));
-    Date *bogus4 = date_create("ab/ab/abab");
-    printf("\n ab/ab/abab is this bogus? %ld", (bogus4 == NULL));
-    Date *bogus5 = date_create("leftleftleft");
-    printf("\n leftleftleft is this bogus? %ld", (bogus5 == NULL));
-    Date *bogus6 = date_create("///");
-    printf("\n /// is this bogus? %ld", (bogus6 == NULL));
-    Date *bogus7 = date_create("/");
-    printf("\n / is this bogus? %d", (bogus7 == NULL));
-    Date *bogus8 = date_create("ab/12/1999");
-    printf("\n ab/12/1999 is this bogus? %d", (bogus8 == NULL));
-    Date *bogus9 = date_create("12/ab/1999");
-    printf("\n 12/ab/1999 is this bogus? %d", (bogus9 == NULL));
-    Date *bogus10 = date_create("11/0a/1922");
-    printf("\n 12/01/192a is this bogus? %d", (bogus10 == NULL));
-
-    
-    tldlist_destroy(a);
-    //tldlist_destroy(a2);
-    //tldlist_destroy(a3);
-    //date_destroy(begin);
-    //date_destroy(end);
- } */

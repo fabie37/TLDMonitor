@@ -1,10 +1,15 @@
+// SP Exercise 1A
+// Fabrizio Catinella
+// 2322021C
+// This is my own work as defined in the Academic Ethics agreement I have signed.
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "date.h"
 
 // Macros and Enumerations
-enum FORMATING {DAYS = 2, MONTHS = 2, YEARS = 4};
 #define NUMB_BASE 10
+enum FORMATING {DAYS = 2, MONTHS = 2, YEARS = 4};
 
 // Definitions for each structure
 struct date {
