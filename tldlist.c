@@ -476,7 +476,7 @@ char *tldstrip(char *str) {
     return stripped;
 }
 
-// Had to implement as Standard library was strcasecmp was causing a bug
+// Had to implement as Standard library strcasecmp was causing a bug
 int strcompare(const char *s1, const char *s2) {
     while (tolower(*s1) == tolower(*s2++))
 	    if (*s1++ == '\0')
