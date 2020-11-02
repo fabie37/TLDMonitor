@@ -402,7 +402,8 @@ void tldlist_iter_destroy(TLDIterator *iter) {
 TLDNode *tldnode_create(char *tld, TLDNode *parent) {
     
     // Assign space for new node in the heap
-    TLDNode *node = (TLDNode *) malloc(sizeof(TLDNode));
+    TLDNode *node = NULL;
+    node = (TLDNode *) malloc(sizeof(TLDNode));
     if (node == NULL) { 
         return NULL; 
     }
