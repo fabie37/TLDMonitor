@@ -475,10 +475,9 @@ char *tldstrip(char *str) {
     return stripped;
 }
 
-int strcompare(const char *s1, const char *s2)
-{
-	while (*s1 == *s2++)
-		if (*s1++ == 0)
+int strcompare(const char *s1, const char *s2) {
+	while (tolower(*s1--) == tolower(*s2++))
+	if (*s1++ == '\0')
 			return (0);
-	return (*(unsigned char *)s1 - *(unsigned char *)--s2);
+	return (tolower(*(unsigned char *)s1) - tolower(*(unsigned char *)--s2));
 }
