@@ -129,11 +129,13 @@ int tldlist_add(TLDList *tld, char *hostname, Date *d) {
         return success;         // If unsuccessful, return 0, else 1
     } 
     // If the list does have a root, search the tree for hostname and add it
-    TLDNode *node = tld->root;
+    TLDNode *node = NULL;
+    node = tld->root;
     while (success == -1) {
        
         // So we need the domain's TLD so we'll strip it and compare it to the current node's TLD
-        char *temp  = tldstrip(hostname);
+        char *temp = NULL;
+        temp  = tldstrip(hostname);
         if (temp == NULL) { success=0; break; }
         int tld_diff = strcasecmp(temp, node->tld);  
         free(temp);
@@ -146,7 +148,8 @@ int tldlist_add(TLDList *tld, char *hostname, Date *d) {
         // Else we need to see if the tld is of greater or less value to the children of the current node
         else {
             // We'll also need to keep track of parent node just in case we need to add a node in this iteration
-            TLDNode *parent = node;
+            TLDNode *parent = NULL;
+            parent = node;
             short goLeft = tld_diff < 0;
             node = (goLeft) ? node->left : node->right;
 
@@ -400,9 +403,14 @@ TLDNode *tldnode_create(char *tld, TLDNode *parent) {
     
     // Assign space for new node in the heap
     TLDNode *node = (TLDNode *) malloc(sizeof(TLDNode));
-    if (node == NULL) { return NULL; }
-    char *domain = tldstrip(tld);
-    if (domain == NULL) { free(node); return NULL;}
+    if (node == NULL) { 
+        return NULL; 
+    }
+    char *domain = NULL;
+    domain = tldstrip(tld);
+    if (domain == NULL) { 
+        free(node); return NULL;
+    }
 
 
     // Assign members to the new node
