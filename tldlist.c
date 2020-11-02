@@ -452,17 +452,21 @@ void tldnode_destory(TLDNode *node) {
 // Given an input domain, stip it down and return the TLD
 char *tldstrip(char *str) {
     if (str == NULL) { return NULL; }
-    char *p = strdup(str);
+    char *p = NULL;
+    p = strdup(str);
     if (p == NULL) { return NULL; }
-    char *p_start = p;
-    char *tld = p;
+    char *p_start = NULL;
+    p_start = p;
+    char *tld = NULL;
+    tld = p;
     while(*p != '\0') {
         if (*p == '.') {
             tld = ++p;
         }
         p++;
     }
-    char *stripped = (char *) malloc(sizeof(char) * ((p+1)-tld));
+    char *stripped = NULL;
+    stripped = (char *) malloc(sizeof(char) * ((p+1)-tld));
     if (stripped != NULL) {
         for (int i=0; (stripped[i] = tld[i]) != '\0'; i++) {}
     }
