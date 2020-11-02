@@ -442,6 +442,7 @@ void tldnode_destory(TLDNode *node) {
 
 // Given an input domain, stip it down and return the TLD
 char *tldstrip(char *str) {
+    if (str == NULL) { return NULL; }
     char *p = strdup(str);
     if (p == NULL) { return NULL; }
     char *p_start = p;
